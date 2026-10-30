@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manuscript — Ethereal Editorial</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="ms-head">
+  <div class="inner">
+    <div class="row">
+      <a class="back" href="dashboard.html"><span data-icon="back"></span>My manuscripts</a>
+      <div class="cover"></div>
+      <div><h1 id="title">Loading…</h1><div class="meta" id="meta"></div></div>
+      <div class="actions">
+        <button class="btn btn-outline btn-sm" id="export">Export report</button>
+        <a class="btn btn-teal btn-sm" id="to-edit" href="order.html">Send to editing</a>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <button class="is-on" data-tab="overview">Overview</button>
+      <button data-tab="requests">Requests (<span data-count="requests">0</span>)</button>
+      <button data-tab="comments">Comments (<span data-count="comments">0</span>)</button>
+      <button data-tab="survey">Survey answers</button>
+      <button data-tab="readers">Readers (<span data-count="readers">0</span>)</button>
+      <button data-tab="settings">Settings</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap-1000">
+  <section data-panel="overview">
+    <div class="stat-grid">
+      <div class="card stat"><small>Active readers</small><strong data-count="readers">0</strong><span id="s-spots"></span></div>
+      <div class="card stat"><small>Finished the book</small><strong id="s-fin">0</strong><span id="s-fin-pct"></span></div>
+      <div class="card stat"><small>Comments</small><strong data-count="comments">0</strong><span id="s-new"></span></div>
+      <div class="card stat"><small>Average chapter rating</small><strong id="s-rate">—</strong><span>out of 5</span></div>
+    </div>
+    <div class="card card-pad" style="margin-top:14px">
+      <div class="chart-head"><h2 class="card-title" style="margin:0">Where readers drop off</h2><small>% of readers who reached each chapter</small></div>
+      <div class="vbars" id="vbars"></div>
+      <div class="vbar-labels" id="vlabels"></div>
+      <div class="callout" id="callout" hidden></div>
+    </div>
+    <div class="card card-pad" style="margin-top:14px">
+      <h2 class="card-title">Reactions by chapter</h2>
+      <div class="legend"><span><i class="c-love"></i>Loved this</span><span><i class="c-conf"></i>Confused</span><span><i class="c-slow"></i>Slow here</span></div>
+      <div id="hbars"></div>
+    </div>
+    <div class="card card-pad" style="margin-top:14px">
+      <div class="chart-head" style="margin-bottom:10px"><h2 class="card-title" style="margin:0">Invite your own readers</h2><small>Approved reader accounts join instantly with this link</small></div>
+      <div class="grid-2" style="grid-template-columns:1fr auto auto;align-items:center">
+        <input class="input filled" id="invite-link" readonly aria-label="Private invite link">
+        <button class="btn btn-outline btn-sm" id="copy-link">Copy</button>
+        <a class="btn btn-rust btn-sm" id="mail-link" href="#">Email it</a>
+      </div>
+    </div>
+  </section>
+
+  <section data-panel="requests" hidden><div class="ms-list" id="requests"></div></section>
+
+  <section data-panel="comments" hidden>
+    <div class="card card-pad">
+      <div class="chart-head" style="margin-bottom:12px"><h2 class="card-title" style="margin:0">Comments</h2>
+        <select class="input" id="c-filter" style="width:auto;height:38px"><option value="">All chapters</option></select></div>
+      <div id="comments"></div>
+    </div>
+  </section>
+
+  <section data-panel="survey" hidden>
+    <div class="card card-pad" id="rating-card">
+      <h2 class="card-title" id="rating-title">Chapter rating (average, 1 to 5)</h2>
+      <div id="ratings"></div>
+    </div>
+    <div class="card card-pad" style="margin-top:14px">
+      <h2 class="card-title">Written answers</h2>
+      <div class="table-wrap"><table class="table"><thead><tr><th>Reader</th><th>Question</th><th>Chapter</th><th>Answer</th></tr></thead><tbody id="answers"></tbody></table></div>
+    </div>
+  </section>
+
+  <section data-panel="readers" hidden>
+    <div class="card card-pad">
+      <h2 class="card-title">Your readers</h2>
+      <div class="table-wrap"><table class="table"><thead><tr><th>Reader</th><th>Progress</th><th>Comments</th><th>Last active</th><th></th></tr></thead><tbody id="readers"></tbody></table></div>
+    </div>
+  </section>
+
+  <section data-panel="settings" hidden>
+    <form class="card card-pad" id="settings" novalidate>
+      <h2 class="card-title">Beta read settings</h2>
+      <label class="check" style="margin-bottom:16px"><input type="checkbox" id="st-listed"> Listed in Discover</label>
+      <div class="grid-2">
+        <div class="field"><label for="st-spots">Reader spots</label><input class="input" id="st-spots" type="number" min="1" max="100" required></div>
+        <div class="field"><label for="st-weeks">Read within (weeks)</label><input class="input" id="st-weeks" type="number" min="1" max="26" required></div>
+      </div>
+      <div class="field"><label for="st-blurb">About the book</label><textarea class="input" id="st-blurb" maxlength="3000"></textarea></div>
+      <div class="field"><label for="st-wants">What you want from readers</label><input class="input" id="st-wants" maxlength="500"></div>
+      <div class="btn-row" style="justify-content:space-between">
+        <button type="button" class="btn btn-outline btn-sm" id="delete" style="color:var(--red);border-color:var(--red)">Delete manuscript</button>
+        <button class="btn btn-ink btn-sm" id="save">Save changes</button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var id = EE.param("id");
+  var D = {}; // manuscript, chapters, access, comments, answers, questions
+
+  // ---- tabs ----
+  var tabs = EE.$$("#tabs button");
+  function show(name) {
+    tabs.forEach(function (t) { var on = t.dataset.tab === name; t.classList.toggle("is-on", on); t.setAttribute("aria-selected", on); });
+    EE.$$("[data-panel]").forEach(function (p) { p.hidden = p.dataset.panel !== name; });
+    history.replaceState(null, "", location.search + "#" + name);
+  }
+  tabs.forEach(function (t) { t.addEventListener("click", function () { show(t.dataset.tab); }); });
+
+  function load() {
+    var sb = EE.sb;
+    return Promise.all([
+      EE.q(sb.from("manuscripts").select("*").eq("id", id).single()),
+      EE.q(sb.from("chapters").select("idx, title, word_count").eq("manuscript_id", id).order("idx")),
+      EE.q(sb.from("access").select("id, status, unlocked, finished, note, created_at, updated_at, reader:profiles(id, name, email, country, pace, experience, genres, why, link)").eq("manuscript_id", id).order("created_at")),
+      EE.q(sb.from("comments").select("id, chapter_idx, para_idx, quote, reaction, body, created_at, reader_id").eq("manuscript_id", id).order("created_at", { ascending: false })),
+      EE.q(sb.from("answers").select("question_id, chapter_idx, score, body, reader_id, created_at").eq("manuscript_id", id)),
+      EE.q(sb.from("questions").select("*").eq("manuscript_id", id).order("idx")),
+      EE.q(sb.from("manuscript_invites").select("code").eq("manuscript_id", id).maybeSingle())
+    ]).then(function (r) {
+      D = { ms: r[0], chapters: r[1], access: r[2], comments: r[3], answers: r[4], questions: r[5], invite: r[6] };
+      D.accepted = D.access.filter(function (a) { return a.status === "accepted"; });
+      D.names = {};
+      D.access.forEach(function (a) { if (a.reader) D.names[a.reader.id] = a.reader.name; });
+      renderAll();
+    });
+  }
+
+  function setCount(k, v) { EE.$$('[data-count="' + k + '"]').forEach(function (el) { el.textContent = v; }); }
+  function readCount(a) { var n = D.chapters.length; return a.finished ? n : Math.min(a.unlocked - 1, n); }
+
+  function renderAll() {
+    var m = D.ms, n = D.chapters.length;
+    document.title = m.title + " — Ethereal Editorial";
+    document.getElementById("title").textContent = m.title;
+    document.getElementById("meta").textContent = (m.genre || "—") + " · " + EE.num(m.word_count) + " words · " + n + " chapters · " + (m.listed ? "Listed in Discover" : "Private");
+    document.getElementById("to-edit").href = "order.html?title=" + encodeURIComponent(m.title) + "&words=" + m.word_count;
+
+    var acc = D.accepted.length, fin = D.accepted.filter(function (a) { return a.finished; }).length;
+    setCount("readers", acc);
+    setCount("requests", D.access.filter(function (a) { return a.status === "requested"; }).length);
+    setCount("comments", D.comments.length);
+    document.getElementById("s-spots").textContent = "of " + m.spots + " spots";
+    document.getElementById("s-fin").textContent = fin;
+    document.getElementById("s-fin-pct").textContent = acc ? Math.round(fin / acc * 100) + "% of readers" : "No readers yet";
+    var dayAgo = Date.now() - 864e5;
+    document.getElementById("s-new").textContent = D.comments.filter(function (c) { return new Date(c.created_at) > dayAgo; }).length + " new since yesterday";
+    var ratingQ = D.questions.filter(function (q) { return q.is_rating; }).map(function (q) { return q.id; });
+    var scores = D.answers.filter(function (a) { return ratingQ.indexOf(a.question_id) > -1 && a.score; });
+    document.getElementById("s-rate").textContent = scores.length ? (scores.reduce(function (s, a) { return s + a.score; }, 0) / scores.length).toFixed(1) : "—";
+
+    // drop-off
+    var reached = D.chapters.map(function (c) {
+      if (!acc) return 0;
+      return Math.round(D.accepted.filter(function (a) { return a.finished || a.unlocked >= c.idx; }).length / acc * 100);
+    });
+    var worst = -1, worstDrop = 0;
+    for (var i = 1; i < reached.length; i++) if (reached[i - 1] - reached[i] > worstDrop) { worstDrop = reached[i - 1] - reached[i]; worst = i; }
+    var vb = document.getElementById("vbars");
+    var cols = "repeat(" + Math.max(n, 1) + ", 1fr)";
+    vb.style.gridTemplateColumns = cols; document.getElementById("vlabels").style.gridTemplateColumns = cols;
+    vb.innerHTML = reached.map(function (v, i) { return '<div class="vbar' + (i === worst ? " hot" : "") + '" title="' + EE.esc(D.chapters[i].title) + '"><b>' + v + '%</b><i style="height:0"></i></div>'; }).join("");
+    document.getElementById("vlabels").innerHTML = D.chapters.map(function (c) { return "<span>Ch " + c.idx + "</span>"; }).join("");
+    setTimeout(function () { EE.$$(".vbar i", vb).forEach(function (bar, i) { bar.style.height = Math.max(reached[i] * 0.82, 1) + "%"; }); }, 60);
+    var co = document.getElementById("callout");
+    if (worst > -1) {
+      var slow = D.comments.filter(function (c) { return c.chapter_idx === worst + 1 && c.reaction === "Slow here"; }).length;
+      co.hidden = false;
+      co.innerHTML = "<b>Biggest drop: chapter " + (worst + 1) + ".</b> " + (slow ? slow + " reader" + (slow > 1 ? "s" : "") + ' marked it "Slow here." ' : "") + "Worth a look before your edit.";
+    } else co.hidden = true;
+
+    // reactions
+    var rx = D.chapters.map(function (c) {
+      var cs = D.comments.filter(function (x) { return x.chapter_idx === c.idx; });
+      return ["Loved this", "Confused", "Slow here"].map(function (r) { return cs.filter(function (x) { return x.reaction === r; }).length; });
+    });
+    var max = Math.max.apply(null, rx.map(function (r) { return r[0] + r[1] + r[2]; }).concat([1]));
+    document.getElementById("hbars").innerHTML = rx.some(function (r) { return r[0] + r[1] + r[2]; }) ? rx.map(function (r, i) {
+      return '<div class="hbar-row"><span>Ch ' + (i + 1) + '</span><div class="hbar" title="' + r[0] + ' loved · ' + r[1] + ' confused · ' + r[2] + ' slow">' +
+        '<i class="c-love" style="width:' + (r[0] / max * 100) + '%"></i><i class="c-conf" style="width:' + (r[1] / max * 100) + '%"></i><i class="c-slow" style="width:' + (r[2] / max * 100) + '%"></i></div><b>' + (r[0] + r[1] + r[2]) + '</b></div>';
+    }).join("") : '<p class="muted small">Reactions appear here as readers tap "Loved this", "Confused" or "Slow here".</p>';
+
+    // invite
+    var link = D.invite ? location.origin + "/book.html?id=" + m.id + "&invite=" + D.invite.code : "";
+    document.getElementById("invite-link").value = link;
+    document.getElementById("mail-link").href = "mailto:?subject=" + encodeURIComponent("Beta read " + m.title) + "&body=" + encodeURIComponent("I'd love your feedback on my manuscript \"" + m.title + "\". Join the beta read here:\n\n" + link + "\n\nIf you don't have an account yet, sign up as a beta reader first.");
+
+    renderRequests(); renderComments(); renderSurvey(); renderReaders(); renderSettings();
+  }
+
+  // ---- requests ----
+  function renderRequests() {
+    var rows = D.access.filter(function (a) { return a.status === "requested" || a.status === "declined"; });
+    document.getElementById("requests").innerHTML = rows.map(function (a) {
+      var r = a.reader || {};
+      var acts = a.status === "requested"
+        ? '<button class="btn btn-outline btn-sm" data-act="declined" data-id="' + a.id + '">Decline</button><button class="btn btn-teal btn-sm" data-act="accepted" data-id="' + a.id + '">Accept</button>'
+        : '<span class="chip chip-soft">Declined</span><button class="text-btn" data-act="requested" data-id="' + a.id + '">Undo</button>';
+      return '<article class="card appr"><span class="avatar av-md">' + EE.esc(EE.initials(r.name)) + '</span><div class="body"><strong>' + EE.esc(r.name || "Reader") + '</strong>' +
+        '<div class="meta">' + EE.esc([r.country, r.pace && "Reads " + r.pace + " books/month", r.experience, (r.genres || []).length && "Likes " + r.genres.join(", ")].filter(Boolean).join(" · ")) + '</div>' +
+        (a.note ? '<em>"' + EE.esc(a.note) + '"</em>' : "") + (r.link ? '<div><a class="link small" href="' + EE.esc(r.link) + '" target="_blank" rel="noopener nofollow">Reading profile</a></div>' : "") +
+        '</div><div class="acts">' + acts + '</div></article>';
+    }).join("") || '<div class="card empty">No requests right now. ' + (D.ms.listed ? "Readers find your book in Discover." : "Your book is private; share your invite link.") + "</div>";
+  }
+  document.getElementById("requests").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-act]"); if (!b) return;
+    if (b.dataset.act === "accepted" && D.accepted.length >= D.ms.spots) return EE.toast("All " + D.ms.spots + " spots are taken. Add spots in Settings first.", "err");
+    EE.busy(b, true, "…");
+    EE.q(EE.sb.from("access").update({ status: b.dataset.act }).eq("id", b.dataset.id))
+      .then(function () { EE.toast(b.dataset.act === "accepted" ? "Reader accepted. They can start reading now." : b.dataset.act === "declined" ? "Request declined." : "Request restored.", b.dataset.act === "accepted" ? "ok" : ""); return load(); })
+      .catch(function (err) { EE.busy(b, false); EE.fail(err); });
+  });
+
+  // ---- comments ----
+  var sel = document.getElementById("c-filter");
+  function renderComments() {
+    var keep = sel.value;
+    sel.innerHTML = '<option value="">All chapters</option>' + D.chapters.map(function (c) { return '<option value="' + c.idx + '">Chapter ' + c.idx + "</option>"; }).join("");
+    sel.value = keep;
+    var f = Number(sel.value);
+    var rows = D.comments.filter(function (c) { return !f || c.chapter_idx === f; });
+    document.getElementById("comments").innerHTML = rows.map(function (c) {
+      return '<div class="my-comment" style="margin-bottom:10px">' + (c.reaction ? '<span class="r">' + EE.esc(c.reaction) + "</span> " : "") + '<span class="tiny muted">Chapter ' + c.chapter_idx + ' · ' + EE.esc(D.names[c.reader_id] || "Reader") + ' · ' + EE.ago(c.created_at) + '</span>' +
+        (c.quote ? '<div class="quote">' + EE.esc(c.quote.length > 160 ? c.quote.slice(0, 160) + "…" : c.quote) + "</div>" : "") + EE.esc(c.body || "") + "</div>";
+    }).join("") || '<p class="empty">No comments yet.</p>';
+  }
+  sel.addEventListener("change", renderComments);
+
+  // ---- survey ----
+  function renderSurvey() {
+    var rq = D.questions.filter(function (q) { return q.is_rating; })[0];
+    document.getElementById("rating-card").hidden = !rq;
+    if (rq) {
+      document.getElementById("rating-title").textContent = rq.body.replace(/\s*\(1 to 5\)\s*$/, "") + " (average, 1 to 5)";
+      document.getElementById("ratings").innerHTML = D.chapters.map(function (c) {
+        var sc = D.answers.filter(function (a) { return a.question_id === rq.id && a.chapter_idx === c.idx && a.score; });
+        var avg = sc.length ? sc.reduce(function (s, a) { return s + a.score; }, 0) / sc.length : 0;
+        return '<div class="hbar-row"><span>Ch ' + c.idx + '</span><div class="hbar"><i class="' + (avg && avg < 3.5 ? "c-slow" : "c-love") + '" style="width:' + (avg / 5 * 100) + '%"></i></div><b>' + (sc.length ? avg.toFixed(1) : "—") + '</b></div>';
+      }).join("");
+    }
+    var qText = {}; D.questions.forEach(function (q) { qText[q.id] = q.body; });
+    var written = D.answers.filter(function (a) { return a.body; }).sort(function (a, b) { return a.chapter_idx - b.chapter_idx; });
+    document.getElementById("answers").innerHTML = written.map(function (a) {
+      return "<tr><td>" + EE.esc(D.names[a.reader_id] || "Reader") + "</td><td>" + EE.esc(qText[a.question_id] || "") + "</td><td>" + (a.chapter_idx ? "Ch " + a.chapter_idx : "End") + "</td><td>" + EE.esc(a.body) + "</td></tr>";
+    }).join("") || '<tr><td colspan="4" class="muted">No written answers yet.</td></tr>';
+  }
+
+  // ---- readers ----
+  function renderReaders() {
+    var n = D.chapters.length || 1;
+    document.getElementById("readers").innerHTML = D.accepted.map(function (a) {
+      var pct = Math.round(readCount(a) / n * 100);
+      var cc = D.comments.filter(function (c) { return c.reader_id === (a.reader || {}).id; }).length;
+      return '<tr><td><b>' + EE.esc((a.reader || {}).name || "Reader") + '</b><br><small class="muted">' + EE.esc((a.reader || {}).email || "") + '</small></td><td style="min-width:140px"><div class="progress teal"><i style="width:' + pct + '%"></i></div><small class="muted">' + (a.finished ? "Finished" : pct + "%") + '</small></td><td>' + cc + '</td><td>' + EE.ago(a.updated_at) + '</td><td><button class="text-btn" data-remove="' + a.id + '">Remove</button></td></tr>';
+    }).join("") || '<tr><td colspan="5" class="muted">No readers yet. Accept requests or share your invite link.</td></tr>';
+  }
+  document.getElementById("readers").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-remove]"); if (!b) return;
+    EE.confirm("Remove this reader?", "They lose access to this manuscript immediately. Their comments stay.", "Remove reader", true).then(function (ok) {
+      if (!ok) return;
+      EE.q(EE.sb.from("access").update({ status: "removed" }).eq("id", b.dataset.remove)).then(function () { EE.toast("Reader removed."); return load(); }).catch(EE.fail);
+    });
+  });
+
+  // ---- settings ----
+  function renderSettings() {
+    document.getElementById("st-listed").checked = D.ms.listed;
+    document.getElementById("st-spots").value = D.ms.spots;
+    document.getElementById("st-weeks").value = D.ms.read_weeks;
+    document.getElementById("st-blurb").value = D.ms.blurb || "";
+    document.getElementById("st-wants").value = D.ms.wants || "";
+  }
+  document.getElementById("settings").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!EE.validate(this)) return;
+    var btn = document.getElementById("save"); EE.busy(btn, true);
+    EE.q(EE.sb.from("manuscripts").update({
+      listed: document.getElementById("st-listed").checked,
+      spots: Math.min(100, Math.max(1, Number(document.getElementById("st-spots").value))),
+      read_weeks: Math.min(26, Math.max(1, Number(document.getElementById("st-weeks").value))),
+      blurb: document.getElementById("st-blurb").value.trim(),
+      wants: document.getElementById("st-wants").value.trim() || null
+    }).eq("id", id)).then(function () { EE.busy(btn, false); EE.toast("Saved.", "ok"); return load(); }).catch(function (err) { EE.busy(btn, false); EE.fail(err); });
+  });
+  document.getElementById("delete").addEventListener("click", function () {
+    EE.confirm("Delete \"" + D.ms.title + "\"?", "This removes the manuscript, its chapters, every comment and every answer. It can't be undone.", "Delete forever", true).then(function (ok) {
+      if (!ok) return;
+      var path = D.ms.file_path;
+      EE.q(EE.sb.from("manuscripts").delete().eq("id", id))
+        .then(function () { if (path) return EE.sb.storage.from("manuscripts").remove([path]); })
+        .then(function () { location.replace("dashboard.html"); })
+        .catch(EE.fail);
+    });
+  });
+
+  // ---- invite + export ----
+  document.getElementById("copy-link").addEventListener("click", function () {
+    var inp = document.getElementById("invite-link");
+    (navigator.clipboard ? navigator.clipboard.writeText(inp.value) : Promise.reject()).then(function () { EE.toast("Link copied.", "ok"); }, function () { inp.select(); EE.toast("Press Ctrl+C to copy."); });
+  });
+  function csvCell(v) { v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  document.getElementById("export").addEventListener("click", function () {
+    if (!D.ms) return;
+    var acc = D.accepted.length || 1;
+    var rq = D.questions.filter(function (q) { return q.is_rating; })[0];
+    var lines = [["Chapter", "Title", "Reached %", "Loved", "Confused", "Slow here", "Avg rating", "Comments"]];
+    D.chapters.forEach(function (c) {
+      var cs = D.comments.filter(function (x) { return x.chapter_idx === c.idx; });
+      var sc = rq ? D.answers.filter(function (a) { return a.question_id === rq.id && a.chapter_idx === c.idx && a.score; }) : [];
+      lines.push([c.idx, c.title, D.accepted.length ? Math.round(D.accepted.filter(function (a) { return a.finished || a.unlocked >= c.idx; }).length / acc * 100) : 0,
+        cs.filter(function (x) { return x.reaction === "Loved this"; }).length, cs.filter(function (x) { return x.reaction === "Confused"; }).length, cs.filter(function (x) { return x.reaction === "Slow here"; }).length,
+        sc.length ? (sc.reduce(function (s, a) { return s + a.score; }, 0) / sc.length).toFixed(1) : "", cs.length]);
+    });
+    lines.push([]); lines.push(["Comments"]); lines.push(["Chapter", "Reader", "Reaction", "Quote", "Comment", "Date"]);
+    D.comments.forEach(function (c) { lines.push([c.chapter_idx, D.names[c.reader_id] || "Reader", c.reaction || "", c.quote || "", c.body || "", EE.fmtDate(c.created_at)]); });
+    var csv = "﻿" + lines.map(function (l) { return l.map(csvCell).join(","); }).join("\n");
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    a.download = D.ms.title.replace(/[^\w]+/g, "-").replace(/^-|-$/g, "") + "-report.csv";
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+
+  EE.guard(["author"]).then(function () {
+    if (!id) return location.replace("dashboard.html");
+    return load().then(function () {
+      var h = location.hash.slice(1);
+      if (h && document.querySelector('[data-panel="' + h + '"]')) show(h);
+    });
+  }).catch(function (err) {
+    EE.fail(err);
+    document.getElementById("title").textContent = "Manuscript not found";
+  });
+});
+</script>
+</body>
+</html>

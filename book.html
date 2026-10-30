@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discover — Ethereal Editorial</title>
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header on-white">
+  <div class="container bar bar-wrap" style="max-width:1048px;height:60px">
+    <a class="back" href="discover.html"><span data-icon="back"></span>Back to Discover</a>
+    <a class="brand" href="index.html" style="margin-left:auto"><img src="logo-mark.png" alt=""><span>Ethereal Editorial</span></a>
+  </div>
+</header>
+
+<main class="book-wrap">
+  <p class="loading-line" id="loading">Loading book…</p>
+  <div class="card empty" id="missing" hidden><h3 style="margin-bottom:8px">This book isn't available</h3><p>It may have been made private or removed by the author.</p><a class="btn btn-ink" style="margin-top:16px" href="discover.html">Browse Discover</a></div>
+
+  <div class="book-grid" id="book" hidden>
+    <div class="book-body">
+      <div class="book-head">
+        <div class="book-cover"><strong id="cv-title"></strong><small id="cv-pen"></small></div>
+        <div>
+          <div class="tag-row" id="tags"></div>
+          <h1 id="b-title"></h1>
+          <p class="small">by <b style="color:var(--ink)" id="b-pen"></b></p>
+          <p class="meta" id="b-meta"></p>
+        </div>
+      </div>
+
+      <h2>About the book</h2>
+      <p class="blurb" id="b-blurb"></p>
+      <p class="tiny muted" style="margin-top:6px" id="b-notes"></p>
+
+      <div class="card card-pad" style="margin-top:20px">
+        <h2>What the author wants from you</h2>
+        <p class="small" id="b-wants"></p>
+        <p class="eyebrow muted" style="font-size:11px;margin-top:14px">You'll be asked</p>
+        <ul class="ask-list" id="b-questions"></ul>
+      </div>
+
+      <div class="card card-pad sample-text" style="margin-top:16px" id="sample" hidden>
+        <div class="chart-head" style="margin-bottom:12px"><h2 style="margin:0" id="s-title"></h2><small id="s-time"></small></div>
+        <div id="s-short"></div>
+        <div id="s-rest" hidden></div>
+        <button class="btn btn-outline btn-sm" id="read-more">Read the full sample chapter</button>
+      </div>
+    </div>
+
+    <aside style="position:sticky;top:76px;display:flex;flex-direction:column;gap:12px">
+      <form class="card card-pad" id="req" novalidate>
+        <div class="facts">
+          <div><small>Spots left</small><strong id="spots">—</strong></div>
+          <div><small>Read within</small><strong id="weeks"></strong></div>
+          <div><small>Chapters</small><strong>One at a time</strong></div>
+          <div><small>Cost to you</small><strong>Free</strong></div>
+        </div>
+        <div id="req-fields" hidden>
+          <div class="field"><label for="note">Note to the author</label><textarea class="input" id="note" placeholder="Why this book? What kind of feedback are you good at?" required minlength="20" maxlength="2000"></textarea><span class="hint">A short personal note gives the author a reason to pick you.</span></div>
+          <label class="check" style="margin-bottom:14px"><input type="checkbox" id="agree" required> <span id="agree-text">I'll keep this manuscript confidential.</span></label>
+        </div>
+        <div class="info-box" id="req-msg" hidden style="margin-bottom:12px"></div>
+        <button class="btn btn-rust btn-block" id="req-btn">Request to read</button>
+      </form>
+      <div class="tip"><b style="color:#fff;font-size:14px">How beta reading works</b><p class="small" style="margin-top:6px;color:#cfd3df">Request, get accepted, read chapter by chapter, comment on any line, and answer the author's questions. It's free, always.</p></div>
+    </aside>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (!EE.sb) return EE.setupNotice();
+  var id = EE.param("id"), invite = EE.param("invite");
+  var M = null, me = null, access = null;
+  var btn = document.getElementById("req-btn"), msg = document.getElementById("req-msg"), fields = document.getElementById("req-fields");
+  function setText(id, t) { document.getElementById(id).textContent = t; }
+  function paras(body) { return String(body || "").split(/\n\s*\n/).filter(Boolean); }
+  function note(html, kind) { msg.hidden = !html; msg.className = "info-box " + (kind || ""); msg.innerHTML = "<span>" + html + "</span>"; }
+
+  function renderAction() {
+    fields.hidden = true; note(""); btn.disabled = false; btn.className = "btn btn-rust btn-block"; btn.dataset.action = "";
+    var here = "book.html?id=" + id + (invite ? "&invite=" + encodeURIComponent(invite) : "");
+    if (!me) { btn.textContent = "Sign in to request"; btn.dataset.action = "signin:" + here; note('New here? <a class="u-link" href="signup.html?path=beta&role=reader">Join as a beta reader</a>. It\'s free.'); return; }
+    if (M.author_id === me.id) { btn.className = "btn btn-ink btn-block"; btn.textContent = "Edit book page"; btn.dataset.action = "go:manuscript.html?id=" + id + "#settings"; note("This is how readers see your book."); return; }
+    if (me.role !== "reader") { note("Authors can't request or comment on other authors' manuscripts."); btn.disabled = true; btn.textContent = "Readers only"; return; }
+    if (me.reader_status !== "approved") {
+      note(me.reader_status === "declined" ? "Your reader application wasn't approved, so you can't request books." : "Your reader application is under review. You can request books once you're approved." + (invite ? " This invite link will work after that." : ""), "warn");
+      btn.disabled = true; btn.textContent = "Available once approved"; return;
+    }
+    var st = access && access.status;
+    if (st === "accepted") { btn.className = "btn btn-teal btn-block"; btn.textContent = access.finished ? "Open the book" : "Start reading"; btn.dataset.action = "go:read.html?id=" + id; note("You're in. Read chapter by chapter and comment on any line.", ""); return; }
+    if (st === "requested") { note("<b>Request sent.</b> You'll see it in your reading list when the author accepts."); btn.className = "btn btn-outline btn-block"; btn.textContent = "Withdraw request"; btn.dataset.action = "withdraw"; return; }
+    if (st === "declined") { note("The author didn't accept this request. Plenty of other books are waiting in Discover."); btn.disabled = true; btn.textContent = "Not accepted"; return; }
+    if (st === "removed") { note("The author ended your access to this book."); btn.disabled = true; btn.textContent = "Access ended"; return; }
+    if (M.spotsLeft === 0) { note("All reader spots are taken for now."); btn.disabled = true; btn.textContent = "Full"; return; }
+    fields.hidden = false; btn.textContent = "Request to read"; btn.dataset.action = "request";
+  }
+
+  document.getElementById("req").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var a = btn.dataset.action || "";
+    if (a.indexOf("signin:") === 0) return void (location.href = "signin.html?next=" + encodeURIComponent(a.slice(7)));
+    if (a.indexOf("go:") === 0) return void (location.href = a.slice(3));
+    if (a === "withdraw") {
+      EE.busy(btn, true, "…");
+      return EE.q(EE.sb.from("access").delete().eq("id", access.id)).then(function () { access = null; EE.busy(btn, false); renderAction(); EE.toast("Request withdrawn."); }).catch(function (err) { EE.busy(btn, false); EE.fail(err); });
+    }
+    if (a !== "request" || !EE.validate(this)) return;
+    EE.busy(btn, true, "Sending…");
+    EE.q(EE.sb.from("access").insert({ manuscript_id: id, reader_id: me.id, note: document.getElementById("note").value.trim() }).select("*").single())
+      .then(function (row) { access = row; EE.busy(btn, false); renderAction(); EE.toast("Request sent to the author.", "ok"); })
+      .catch(function (err) { EE.busy(btn, false); EE.fail(err); });
+  });
+
+  document.getElementById("read-more").addEventListener("click", function () {
+    var rest = document.getElementById("s-rest"), open = rest.hidden;
+    rest.hidden = !open; this.textContent = open ? "Show less" : "Read the full sample chapter";
+  });
+
+  EE.profile().catch(function () { return null; }).then(function (p) {
+    me = p;
+    // Private invite: join first, then load the book (which may be unlisted).
+    if (invite && me && me.role === "reader" && me.reader_status === "approved") {
+      return EE.q(EE.sb.rpc("join_with_invite", { m: id, code: invite })).then(function (res) {
+        if (res === "ok") EE.toast("You've joined this beta read. Happy reading!", "ok");
+        else if (res === "bad_code") EE.toast("That invite link isn't valid any more. Ask the author for a new one.", "err");
+      });
+    }
+  }).then(function () {
+    return Promise.all([
+      EE.q(EE.sb.from("manuscripts").select("*").eq("id", id).maybeSingle()),
+      EE.q(EE.sb.from("questions").select("body, frequency").eq("manuscript_id", id).order("idx")),
+      EE.q(EE.sb.from("chapters").select("idx, title, body, word_count").eq("manuscript_id", id).eq("idx", 1).maybeSingle()),
+      EE.q(EE.sb.rpc("discover_books")),
+      me ? EE.q(EE.sb.from("access").select("*").eq("manuscript_id", id).eq("reader_id", me.id).maybeSingle()) : Promise.resolve(null)
+    ]);
+  }).then(function (r) {
+    document.getElementById("loading").hidden = true;
+    M = r[0];
+    if (!M) { document.getElementById("missing").hidden = false; return; }
+    access = r[4];
+    var listing = r[3].filter(function (b) { return b.id === id; })[0];
+    M.spotsLeft = listing ? Math.max(0, listing.spots - listing.taken) : null;
+    document.title = M.title + " — Discover · Ethereal Editorial";
+    setText("cv-title", M.title); setText("cv-pen", (M.pen_name || "").toUpperCase());
+    setText("b-title", M.title); setText("b-pen", M.pen_name);
+    var hours = Math.max(1, Math.round(M.word_count / 250 / 60));
+    setText("b-meta", EE.num(M.word_count) + " words · " + M.chapter_count + " chapters · about " + hours + " hour" + (hours > 1 ? "s" : "") + " to read");
+    document.getElementById("tags").innerHTML = [[M.genre, "chip-peach"], [M.audience, "chip-soft"], [M.stage, "chip-soft"]].filter(function (t) { return t[0]; })
+      .map(function (t) { return '<span class="chip ' + t[1] + '" style="font-size:12px;padding:3px 10px">' + EE.esc(t[0]) + "</span>"; }).join("");
+    setText("b-blurb", M.blurb || "");
+    document.getElementById("b-notes").innerHTML = M.content_notes ? "<b>Content notes:</b> " + EE.esc(M.content_notes) : "";
+    setText("b-wants", M.wants || "Honest, specific feedback on what works and what doesn't.");
+    document.getElementById("b-questions").innerHTML = r[1].map(function (q) { return "<li>" + EE.esc(q.body) + " · " + (q.frequency === "end" ? "end of book" : "every chapter") + "</li>"; }).join("") || "<li>No set questions. Comment on any line you like.</li>";
+    setText("spots", M.spotsLeft == null ? "Private" : M.spotsLeft + " of " + M.spots);
+    setText("weeks", M.read_weeks + " weeks");
+    setText("agree-text", "I'll keep this manuscript confidential and aim to finish within " + M.read_weeks + " weeks.");
+
+    var ch = r[2];
+    if (ch && ch.body) {
+      var ps = paras(ch.body);
+      document.getElementById("sample").hidden = false;
+      setText("s-title", "Free sample: " + ch.title);
+      setText("s-time", Math.max(1, Math.round(ch.word_count / 250)) + " min read");
+      document.getElementById("s-short").innerHTML = ps.slice(0, 2).map(function (p) { return "<p>" + EE.esc(p) + "</p>"; }).join("");
+      document.getElementById("s-rest").innerHTML = ps.slice(2).map(function (p) { return "<p>" + EE.esc(p) + "</p>"; }).join("");
+      document.getElementById("read-more").hidden = ps.length <= 2;
+    }
+    document.getElementById("book").hidden = false;
+    renderAction();
+  }).catch(function (err) { document.getElementById("loading").hidden = true; EE.fail(err); });
+});
+</script>
+</body>
+</html>

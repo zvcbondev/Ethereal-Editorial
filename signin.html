@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in — Ethereal Editorial</title>
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>.signin-hero .lt { background: #fff; border-radius: 14px; padding: 10px 14px; }</style>
+</head>
+<body>
+<a class="signin-hero" href="index.html" aria-label="Ethereal Editorial home"><span class="lt"><img src="logo-full.png" alt="Ethereal Editorial"></span></a>
+
+<main class="signin-box">
+  <h1 class="display">Welcome back</h1>
+  <p class="muted" style="margin:6px 0 22px">Sign in to your authors, readers or editing account.</p>
+
+  <div class="info-box" id="note" hidden><span data-icon="info"></span><span id="note-text"></span></div>
+
+  <form id="signin" novalidate>
+    <div class="field"><label for="email">Email</label><input class="input" id="email" name="email" type="email" placeholder="you@email.com" required autocomplete="email"></div>
+    <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><label for="pass">Password</label><a class="link small" href="#" id="forgot">Forgot password?</a></div>
+      <input class="input" id="pass" name="password" type="password" placeholder="Your password" required autocomplete="current-password">
+    </div>
+    <label class="check" style="margin:4px 0 18px"><input type="checkbox" name="keep" id="keep" checked> Keep me signed in</label>
+    <button class="btn btn-ink btn-block" type="submit" id="go">Sign in</button>
+  </form>
+
+  <div class="divider">or</div>
+  <button class="btn btn-outline btn-block" id="google" style="border-color:var(--line)">
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+    Continue with Google
+  </button>
+  <p class="center small" style="margin-top:16px;color:var(--muted)">New here? <a class="u-link" href="signup.html">Create an account</a></p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var form = document.getElementById("signin"), note = document.getElementById("note"), noteText = document.getElementById("note-text");
+  function show(msg, kind) { noteText.textContent = msg; note.className = "info-box " + (kind || ""); note.hidden = !msg; }
+  // Only follow relative "next" links, never another site.
+  var next = EE.param("next");
+  if (next && (/^[a-z]+:/i.test(next) || next.indexOf("//") === 0)) next = null;
+  function go(p) { location.replace(next || EE.homeFor(p)); }
+
+  if (!EE.sb) { EE.setupNotice(); return; }
+  if (EE.param("confirmed")) show("Your email is confirmed. Sign in to continue.");
+  EE.profile().then(function (p) { if (p) go(p); }).catch(function () {});
+  EE.sb.auth.onAuthStateChange(function (ev) {
+    if (ev === "SIGNED_IN") EE.profile(true).then(function (p) { if (p) go(p); });
+  });
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    show("");
+    if (!EE.validate(form)) return;
+    try { localStorage.setItem("ee:keep", document.getElementById("keep").checked ? "1" : "0"); } catch (err) {}
+    var btn = document.getElementById("go");
+    EE.busy(btn, true, "Signing in…");
+    EE.sb.auth.signInWithPassword({ email: form.elements["email"].value.trim(), password: form.elements["password"].value })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        return EE.profile(true);
+      })
+      .then(function (p) {
+        if (!p) throw new Error("Your account profile is missing. Please contact us.");
+        if (p.role === "reader" && p.reader_status === "declined") {
+          show("Your reader application wasn't approved this time. You can still sign in, but manuscripts stay closed.", "warn");
+          setTimeout(function () { go(p); }, 2500);
+          return;
+        }
+        go(p);
+      })
+      .catch(function (err) {
+        EE.busy(btn, false);
+        show(EE.message(err), "err");
+        EE.setError(form.elements["password"], " ");
+      });
+  });
+
+  document.getElementById("forgot").addEventListener("click", function (e) {
+    e.preventDefault();
+    var m = EE.modal('<h3>Reset your password</h3><p class="muted small">Enter your email and we\'ll send you a reset link.</p><form id="reset" novalidate style="margin-top:16px"><div class="field"><label for="r-email">Email</label><input class="input" id="r-email" type="email" required></div><div class="btn-row"><button type="button" class="btn btn-outline btn-sm" data-close>Cancel</button><button class="btn btn-ink btn-sm" id="r-go">Send reset link</button></div></form>');
+    m.querySelector("#r-email").value = form.elements["email"].value;
+    m.querySelector("#reset").addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      if (!EE.validate(this)) return;
+      var b = m.querySelector("#r-go"); EE.busy(b, true, "Sending…");
+      EE.sb.auth.resetPasswordForEmail(m.querySelector("#r-email").value.trim(), { redirectTo: location.origin + "/reset.html" })
+        .then(function (r) {
+          if (r.error) throw r.error;
+          EE.closeModal(); EE.toast("If an account exists, a reset link is on its way.", "ok");
+        })
+        .catch(function (err) { EE.busy(b, false); EE.fail(err); });
+    });
+  });
+
+  document.getElementById("google").addEventListener("click", function () {
+    EE.sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + "/signin.html" + (next ? "?next=" + encodeURIComponent(next) : "") } })
+      .then(function (r) { if (r.error) throw r.error; })
+      .catch(EE.fail);
+  });
+});
+</script>
+</body>
+</html>

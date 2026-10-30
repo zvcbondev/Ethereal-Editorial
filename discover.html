@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discover — Ethereal Editorial</title>
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header id="app-top"></header>
+<div class="app">
+  <nav id="sidebar" aria-label="Dashboard"></nav>
+  <main class="app-main">
+    <div class="info-box warn" id="pending" hidden><span data-icon="info"></span><span id="pending-text"></span></div>
+
+    <section data-panel="discover">
+      <div class="page-head">
+        <h1>Discover</h1>
+        <select class="input" id="genre" style="width:auto;height:40px" aria-label="Filter by genre"><option value="">All genres</option></select>
+      </div>
+      <p class="muted small" style="margin:-10px 0 18px" id="search-note" hidden></p>
+      <div class="book-cards" id="books"><p class="loading-line">Loading books…</p></div>
+    </section>
+
+    <section data-panel="reading" hidden>
+      <div class="page-head"><h1>Reading list</h1></div>
+      <div class="ms-list" id="reading"><p class="loading-line">Loading…</p></div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var tab = EE.param("tab") === "reading" ? "reading" : "discover";
+  var query = (EE.param("q") || "").trim().toLowerCase();
+  EE.$$("[data-panel]").forEach(function (p) { p.hidden = p.dataset.panel !== tab; });
+  var COLORS = ["#7c2d12", "#134e48", "#1e3a5f", "#4a1d4f", "#3f3f12", "#5b1a1a"];
+  function color(id) { var n = 0; for (var i = 0; i < id.length; i++) n = (n + id.charCodeAt(i)) % COLORS.length; return COLORS[n]; }
+
+  EE.guard(["reader", "author"]).then(function (me) {
+    EE.mountShell(tab, me);
+    if (me.role === "reader" && me.reader_status !== "approved") {
+      document.getElementById("pending").hidden = false;
+      document.getElementById("pending-text").innerHTML = me.reader_status === "declined"
+        ? "Your reader application wasn't approved this time, so you can't request books. Questions? <a class=\"u-link\" href=\"chat.html\">Message us</a>."
+        : "<b>Your reader application is under review.</b> You can browse now and request books as soon as Ethereal Editorial approves you. <a class=\"u-link\" href=\"profile.html\">Complete your profile</a>";
+    }
+    return Promise.all([
+      EE.q(EE.sb.rpc("discover_books")),
+      EE.q(EE.sb.from("access").select("status, unlocked, finished, manuscript:manuscripts(id, title, pen_name, genre, word_count, chapter_count)").eq("reader_id", me.id).order("updated_at", { ascending: false }))
+    ]);
+  }).then(function (r) {
+    var books = r[0], mine = r[1];
+    var genres = Array.from(new Set(books.map(function (b) { return b.genre; }).filter(Boolean))).sort();
+    var sel = document.getElementById("genre");
+    sel.innerHTML += genres.map(function (g) { return '<option>' + EE.esc(g) + "</option>"; }).join("");
+    if (query) { var n = document.getElementById("search-note"); n.hidden = false; n.innerHTML = 'Results for "<b>' + EE.esc(query) + '</b>" · <a class="link" href="discover.html">Clear</a>'; }
+
+    function renderBooks() {
+      var g = sel.value;
+      var list = books.filter(function (b) {
+        if (g && b.genre !== g) return false;
+        if (!query) return true;
+        return [b.title, b.pen_name, b.genre, b.blurb].join(" ").toLowerCase().indexOf(query) > -1;
+      });
+      document.getElementById("books").innerHTML = list.map(function (b) {
+        var left = Math.max(0, b.spots - b.taken);
+        return '<a class="card book-card" href="book.html?id=' + b.id + '"><div class="cover" style="background:' + color(b.id) + '">' + EE.esc(b.title) + '</div><div style="min-width:0">' +
+          '<h3>' + EE.esc(b.title) + '</h3><div class="meta">by ' + EE.esc(b.pen_name) + ' · ' + EE.esc(b.genre || "") + ' · ' + EE.num(b.word_count) + ' words</div>' +
+          '<p>' + EE.esc(b.blurb || "") + '</p><div style="margin-top:8px"><span class="status-pill ' + (left ? "ok" : "") + '">' + (left ? left + " of " + b.spots + " spots left" : "Full") + '</span></div></div></a>';
+      }).join("") || '<div class="card empty" style="grid-column:1/-1">No books match right now. New manuscripts are listed all the time.</div>';
+    }
+    sel.addEventListener("change", renderBooks);
+    renderBooks();
+
+    var LABEL = { requested: ["Request sent", "warn"], accepted: ["Reading", "ok"], declined: ["Not accepted", ""], removed: ["Access removed", ""] };
+    document.getElementById("reading").innerHTML = mine.filter(function (a) { return a.manuscript; }).map(function (a) {
+      var m = a.manuscript, total = m.chapter_count || 0;
+      var done = a.finished ? total : Math.min(a.unlocked - 1, total);
+      var pct = total ? Math.round(done / total * 100) : 0;
+      var st = a.finished ? ["Finished", "ink"] : LABEL[a.status];
+      var btn = a.status === "accepted" ? '<a class="btn ' + (a.finished ? "btn-outline" : "btn-teal") + ' btn-sm" href="read.html?id=' + m.id + '">' + (a.finished ? "Open" : done ? "Continue" : "Start reading") + "</a>" : '<a class="btn btn-outline btn-sm" href="book.html?id=' + m.id + '">View</a>';
+      return '<article class="card ms"><div class="cover" style="background:' + color(m.id) + '"></div><div class="ms-info"><h3>' + EE.esc(m.title) + '</h3><div class="meta">by ' + EE.esc(m.pen_name) + ' · ' + EE.esc(m.genre || "") + ' · ' + total + ' chapters</div>' +
+        (a.status === "accepted" ? '<div class="progress teal"><i style="width:' + pct + '%"></i></div><small>' + done + ' of ' + total + ' chapters read</small>' : "") +
+        '</div><span class="status-pill ' + st[1] + '">' + st[0] + '</span>' + btn + '</article>';
+    }).join("") || '<div class="card empty">Your reading list is empty. <a class="link" href="discover.html">Find a book in Discover</a>.</div>';
+  }).catch(EE.fail);
+});
+</script>
+</body>
+</html>

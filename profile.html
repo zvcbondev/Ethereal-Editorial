@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profile — Ethereal Editorial</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header on-white">
+  <div class="container bar bar-wrap" style="max-width:888px;height:60px;gap:12px">
+    <a class="brand" href="index.html"><img src="logo-mark.png" alt=""><span>Ethereal Editorial</span></a>
+    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+      <a class="btn btn-outline btn-sm" id="home-link" href="discover.html">My account</a>
+      <div class="seg" id="view" hidden><button class="is-on" data-view="public">Public view</button><button data-view="edit">Edit</button></div>
+    </div>
+  </div>
+</header>
+
+<main class="profile-wrap">
+  <p class="loading-line" id="loading">Loading profile…</p>
+  <div class="info-box warn" id="pending" hidden><span data-icon="info"></span><span id="pending-text"></span></div>
+
+  <div id="content" hidden>
+    <section class="card profile-hero">
+      <div class="cover-band"></div>
+      <div class="row">
+        <div class="big-av" id="av"></div>
+        <div class="who">
+          <h1><span id="p-name"></span> <span class="chip chip-peach" id="p-badge" style="font-size:12px;padding:4px 10px"></span></h1>
+          <p class="small muted" id="p-sub"></p>
+        </div>
+        <button class="btn btn-outline btn-sm" id="edit-btn" hidden>Edit profile</button>
+      </div>
+    </section>
+
+    <div class="profile-grid" data-pane="public">
+      <div class="stack">
+        <div class="card card-pad"><h2 class="card-title" id="about-title">About me as a reader</h2><div class="muted" id="about" style="white-space:pre-line"></div></div>
+        <div class="card card-pad" data-reader><h2 class="card-title">Feedback I'm good at</h2><div class="tag-row" id="skills"></div></div>
+        <div class="card card-pad" id="why-card" hidden><h2 class="card-title">Why I want to beta read</h2><p class="muted" id="why"></p></div>
+      </div>
+      <div class="stack">
+        <div class="card card-pad" data-reader><h2 class="card-title" style="font-size:15px">Reading record</h2>
+          <div class="record"><div><strong id="r-fin">0</strong><span>Books finished</span></div><div><strong id="r-cpb">0</strong><span>Comments per book</span></div><div><strong id="r-time">—</strong><span>Typical finish time</span></div><div><strong id="r-auth">0</strong><span>Authors helped</span></div></div>
+          <p class="tiny muted" style="margin-top:10px">Calculated automatically from activity on Ethereal Editorial.</p></div>
+        <div class="card card-pad" data-reader><h2 class="card-title" style="font-size:15px">Genres I love</h2><div class="tag-row" id="genres"></div></div>
+        <div class="card card-pad" id="links-card" hidden><h2 class="card-title" style="font-size:15px">Links</h2><a class="link" id="link" target="_blank" rel="noopener nofollow">Reading profile</a></div>
+        <p class="tiny muted" data-reader>Your reader profile is shown to authors when you request their book, and to authors you're reading for. Readers can't see each other's profiles.</p>
+      </div>
+    </div>
+
+    <form class="card card-pad" data-pane="edit" style="margin-top:16px" hidden novalidate>
+      <h2 class="card-title">Edit your profile</h2>
+      <div class="grid-2">
+        <div class="field"><label for="e-name">Display name</label><input class="input" id="e-name" required maxlength="120"></div>
+        <div class="field" data-reader><label for="e-country">Country</label><input class="input" id="e-country" maxlength="80"></div>
+      </div>
+      <div class="field"><label for="e-about" id="e-about-label">About me as a reader</label><textarea class="input" id="e-about" style="min-height:130px" maxlength="3000"></textarea></div>
+      <div class="field" data-reader><span class="label">Feedback I'm good at</span><div class="tag-row" id="e-skills"></div></div>
+      <div class="field" data-reader><span class="label">Genres I love</span><div class="tag-row" id="e-genres"></div></div>
+      <div class="field"><label for="e-link">Goodreads or reading profile link</label><input class="input" id="e-link" type="url" maxlength="300" placeholder="https://www.goodreads.com/…"></div>
+      <div class="btn-row" style="justify-content:flex-end"><button type="button" class="btn btn-outline" id="cancel-edit">Cancel</button><button class="btn btn-ink" id="save">Save profile</button></div>
+    </form>
+
+    <form class="card card-pad" id="password" style="margin-top:16px" hidden novalidate>
+      <h2 class="card-title">Change password</h2>
+      <div class="grid-2">
+        <div class="field"><label for="pw1">New password</label><input class="input" id="pw1" type="password" minlength="8" required autocomplete="new-password"></div>
+        <div class="field"><label for="pw2">Repeat new password</label><input class="input" id="pw2" type="password" minlength="8" required autocomplete="new-password"></div>
+      </div>
+      <div class="btn-row" style="justify-content:flex-end"><button class="btn btn-outline btn-sm" id="pw-save">Update password</button></div>
+    </form>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var SKILLS = ["Pacing", "Characters", "Plot holes", "Dialogue", "Worldbuilding", "Prose & style", "Continuity", "Emotional impact"];
+  var GENRES = ["Fantasy", "Literary", "Mystery", "Romance", "Thriller", "Sci-fi", "Horror", "Young adult", "Non-fiction"];
+  var me, P, own = false, view = "public";
+  function setText(id, t) { document.getElementById(id).textContent = t; }
+
+  function paint() {
+    var reader = P.role === "reader";
+    EE.$$("[data-reader]").forEach(function (el) { el.hidden = !reader; });
+    setText("p-name", P.name);
+    setText("av", EE.initials(P.name));
+    document.getElementById("av").style.background = reader ? "var(--rust)" : "var(--ink)";
+    var badge = document.getElementById("p-badge");
+    badge.textContent = reader ? ({ approved: "Approved beta reader", pending: "Pending approval", declined: "Not approved" })[P.reader_status] || "Reader" : P.role === "admin" ? "Admin" : "Author";
+    badge.className = "chip " + (reader ? "chip-peach" : "chip-mint");
+    setText("p-sub", [P.country, "Member since " + new Date(P.created_at).toLocaleString("en-US", { month: "long", year: "numeric" })].filter(Boolean).join(" · "));
+    setText("about-title", reader ? "About me as a reader" : "About me");
+    setText("e-about-label", reader ? "About me as a reader" : "About me");
+    setText("about", P.about || (own ? "Tell authors a little about how you read. Click Edit profile." : "No description yet."));
+    document.getElementById("skills").innerHTML = (P.skills || []).map(function (s) { return '<span class="chip chip-peach">' + EE.esc(s) + "</span>"; }).join("") || '<span class="muted small">Not set yet.</span>';
+    document.getElementById("genres").innerHTML = (P.genres || []).map(function (s) { return '<span class="chip">' + EE.esc(s) + "</span>"; }).join("") || '<span class="muted small">Not set yet.</span>';
+    document.getElementById("why-card").hidden = !(P.why && (!own || me.role === "admin" || reader));
+    setText("why", P.why || "");
+    var link = document.getElementById("link");
+    document.getElementById("links-card").hidden = !P.link;
+    if (P.link && /^https?:\/\//i.test(P.link)) { link.href = P.link; link.textContent = /goodreads/i.test(P.link) ? "Goodreads profile" : P.link.replace(/^https?:\/\//, "").slice(0, 40); }
+    document.getElementById("edit-btn").hidden = !own || view === "edit";
+    document.getElementById("view").hidden = !own;
+    EE.$('[data-pane="public"]').hidden = view === "edit";
+    EE.$('[data-pane="edit"]').hidden = view !== "edit";
+    document.getElementById("password").hidden = !(own && view === "edit");
+    EE.$$("#view button").forEach(function (b) { b.classList.toggle("is-on", b.dataset.view === view); });
+    if (own && reader && P.reader_status !== "approved") {
+      document.getElementById("pending").hidden = false;
+      document.getElementById("pending-text").innerHTML = P.reader_status === "declined"
+        ? "Your reader application wasn't approved this time. Questions? <a class=\"u-link\" href=\"chat.html\">Message us</a>."
+        : "<b>Your reader application is under review.</b> Complete your profile now. Manuscripts open as soon as Ethereal Editorial approves you, usually within 2 working days.";
+    }
+  }
+
+  function record() {
+    if (P.role !== "reader") return Promise.resolve();
+    return Promise.all([
+      EE.q(EE.sb.from("access").select("manuscript_id, status, finished, created_at, updated_at, manuscript:manuscripts(author_id)").eq("reader_id", P.id)),
+      EE.q(EE.sb.from("comments").select("manuscript_id").eq("reader_id", P.id))
+    ]).then(function (r) {
+      var acc = r[0].filter(function (a) { return a.status === "accepted" || a.status === "removed"; });
+      var fin = acc.filter(function (a) { return a.finished; });
+      setText("r-fin", acc.length ? fin.length + " of " + acc.length : "0");
+      setText("r-cpb", acc.length ? "~" + Math.round(r[1].length / acc.length) : "0");
+      if (fin.length) {
+        var days = fin.reduce(function (s, a) { return s + (new Date(a.updated_at) - new Date(a.created_at)) / 864e5; }, 0) / fin.length;
+        setText("r-time", days < 10 ? "~" + Math.max(1, Math.round(days)) + " days" : "~" + Math.round(days / 7) + " weeks");
+      }
+      var authors = {}; acc.forEach(function (a) { if (a.manuscript) authors[a.manuscript.author_id] = 1; });
+      setText("r-auth", Object.keys(authors).length);
+    });
+  }
+
+  function chips(container, all, on) {
+    var set = all.slice(); (on || []).forEach(function (g) { if (set.indexOf(g) === -1) set.push(g); });
+    container.innerHTML = set.map(function (g) { return '<button type="button" class="chip' + ((on || []).indexOf(g) > -1 ? " is-on" : "") + '">' + EE.esc(g) + "</button>"; }).join("");
+  }
+  function openEdit() {
+    view = "edit";
+    document.getElementById("e-name").value = P.name;
+    document.getElementById("e-country").value = P.country || "";
+    document.getElementById("e-about").value = P.about || "";
+    document.getElementById("e-link").value = P.link || "";
+    chips(document.getElementById("e-skills"), SKILLS, P.skills);
+    chips(document.getElementById("e-genres"), GENRES, P.genres);
+    paint();
+  }
+  document.addEventListener("click", function (e) { var c = e.target.closest("#e-skills .chip, #e-genres .chip"); if (c) c.classList.toggle("is-on"); });
+  EE.$$("#view button").forEach(function (b) { b.addEventListener("click", function () { if (b.dataset.view === "edit") openEdit(); else { view = "public"; paint(); } }); });
+  document.getElementById("edit-btn").addEventListener("click", openEdit);
+  document.getElementById("cancel-edit").addEventListener("click", function () { view = "public"; paint(); });
+  EE.$('[data-pane="edit"]').addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!EE.validate(this)) return;
+    var upd = { name: document.getElementById("e-name").value.trim(), about: document.getElementById("e-about").value.trim() || null, link: document.getElementById("e-link").value.trim() || null };
+    if (P.role === "reader") {
+      upd.country = document.getElementById("e-country").value.trim() || null;
+      upd.skills = EE.$$("#e-skills .chip.is-on").map(function (c) { return c.textContent; });
+      upd.genres = EE.$$("#e-genres .chip.is-on").map(function (c) { return c.textContent; });
+      if (!upd.genres.length) return EE.toast("Pick at least one genre.", "err");
+    }
+    var btn = document.getElementById("save"); EE.busy(btn, true);
+    EE.q(EE.sb.from("profiles").update(upd).eq("id", P.id).select("*").single())
+      .then(function (row) { P = row; EE.busy(btn, false); view = "public"; paint(); window.scrollTo({ top: 0, behavior: "smooth" }); EE.toast("Profile saved.", "ok"); })
+      .catch(function (err) { EE.busy(btn, false); EE.fail(err); });
+  });
+  document.getElementById("password").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!EE.validate(this)) return;
+    var p1 = document.getElementById("pw1"), p2 = document.getElementById("pw2");
+    if (p1.value !== p2.value) return EE.setError(p2, "Passwords don't match.");
+    var btn = document.getElementById("pw-save"); EE.busy(btn, true);
+    EE.sb.auth.updateUser({ password: p1.value }).then(function (r) {
+      if (r.error) throw r.error;
+      EE.busy(btn, false); p1.value = p2.value = ""; EE.toast("Password updated.", "ok");
+    }).catch(function (err) { EE.busy(btn, false); EE.fail(err); });
+  });
+
+  EE.guard(["reader", "author"]).then(function (p) {
+    me = p;
+    document.getElementById("home-link").href = EE.homeFor(me);
+    var target = EE.param("id") || me.id;
+    own = target === me.id;
+    return EE.q(EE.sb.from("profiles").select("*").eq("id", target).maybeSingle());
+  }).then(function (row) {
+    document.getElementById("loading").hidden = true;
+    if (!row) { document.getElementById("loading").hidden = false; document.getElementById("loading").textContent = "You can't view this profile."; return; }
+    P = row;
+    document.getElementById("content").hidden = false;
+    paint();
+    if (own && EE.param("edit")) openEdit();
+    return record();
+  }).catch(EE.fail);
+});
+</script>
+</body>
+</html>

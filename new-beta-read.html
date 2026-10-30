@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New beta read — Ethereal Editorial</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="flow-top">
+  <div class="bar">
+    <a class="back" href="dashboard.html" id="cancel"><span data-icon="x"></span>Cancel</a>
+    <span class="title">New beta read</span>
+    <span id="saved"></span>
+  </div>
+</header>
+
+<main class="flow">
+  <ol class="stepper" id="stepper">
+    <li><i>1</i><span>Upload</span></li><li><i>2</i><span>Details</span></li><li><i>3</i><span>Chapters</span></li>
+    <li><i>4</i><span>Questions</span></li><li><i>5</i><span>Readers</span></li><li><i>6</i><span>Review</span></li>
+  </ol>
+
+  <div class="flow-grid">
+    <form class="card flow-card" id="wizard" novalidate>
+      <!-- 1 -->
+      <section data-step="1">
+        <h1>Upload your manuscript</h1>
+        <p class="muted">We'll split it into chapters automatically using your chapter headings.</p>
+        <div id="upload-mode">
+          <label class="dropzone dropzone-light" data-max-mb="50">
+            <span data-icon="upload"></span>
+            <strong>Drag your .docx here, or click to browse</strong>
+            <span class="small">Word (.docx) works best. Up to 50 MB.</span>
+            <span class="file-name"></span>
+            <input type="file" accept=".docx" id="file">
+          </label>
+          <p class="center small muted" id="parse-status" style="margin-top:14px" hidden></p>
+          <p class="small muted" style="margin-top:16px">No .docx? You can also <button type="button" class="u-link" style="background:none;border:0;padding:0" id="to-paste">paste your text</button> chapter by chapter.</p>
+        </div>
+        <div id="paste-mode" hidden>
+          <div class="field"><label for="paste">Paste your manuscript</label>
+            <textarea class="input" id="paste" style="min-height:260px;font-family:var(--f-serif);font-size:16px" placeholder="Chapter 1&#10;&#10;The orchard had been salted twice…&#10;&#10;Chapter 2&#10;&#10;…"></textarea>
+            <span class="hint">Start each chapter with a heading line such as "Chapter 1", "Chapter One", "Prologue" or "Epilogue".</span></div>
+          <p class="small muted"><button type="button" class="u-link" style="background:none;border:0;padding:0" id="to-upload">Upload a file instead</button></p>
+        </div>
+      </section>
+
+      <!-- 2 -->
+      <section data-step="2" hidden>
+        <h1>Book details</h1>
+        <p class="muted">This is what readers see before they request your book.</p>
+        <div class="grid-2">
+          <div class="field"><label for="d-title">Title</label><input class="input" id="d-title" required maxlength="200"></div>
+          <div class="field"><label for="d-pen">Pen name</label><input class="input" id="d-pen" required maxlength="120" placeholder="Your author name"></div>
+          <div class="field"><label for="d-genre">Genre</label><select class="input" id="d-genre"><option>Literary fiction</option><option>Fantasy</option><option>Romance</option><option>Thriller</option><option>Mystery</option><option>Sci-fi</option><option>Horror</option><option>Historical fiction</option><option>Young adult</option><option>Memoir</option><option>Non-fiction</option><option>Other</option></select></div>
+          <div class="field"><label for="d-aud">Audience</label><select class="input" id="d-aud"><option>Adult</option><option>Young adult</option><option>Middle grade</option></select></div>
+        </div>
+        <div class="field"><label for="d-blurb">About the book</label><textarea class="input" id="d-blurb" required maxlength="3000" placeholder="A short blurb, two or three sentences."></textarea></div>
+        <div class="grid-2">
+          <div class="field"><label for="d-stage">Draft stage</label><select class="input" id="d-stage"><option>Full draft</option><option>Second draft</option><option>Final draft</option><option>Partial draft</option></select></div>
+          <div class="field"><label for="d-notes">Content notes <span class="muted" style="font-weight:400">(optional)</span></label><input class="input" id="d-notes" maxlength="300" placeholder="e.g. grief, violence (off page)"></div>
+        </div>
+        <div class="field"><label for="d-wants">What do you want from readers?</label><input class="input" id="d-wants" maxlength="500" placeholder="Mostly pacing and plot. Tell me where you got bored."></div>
+      </section>
+
+      <!-- 3 -->
+      <section data-step="3" hidden>
+        <h1>Check your chapters</h1>
+        <p class="muted">Rename or remove chapters. Readers unlock them one at a time.</p>
+        <div class="chapter-list" id="chapters"></div>
+      </section>
+
+      <!-- 4 -->
+      <section data-step="4" hidden>
+        <h1>Questions for your readers</h1>
+        <p class="muted">Readers answer these as they go. The 1 to 5 rating powers your chapter chart.</p>
+        <div id="questions"></div>
+        <div class="grid-2" style="grid-template-columns:1fr 180px;margin-top:10px">
+          <div class="field" style="margin:0"><label for="q-new" class="sr-only">New question</label><input class="input" id="q-new" maxlength="500" placeholder="Add your own question"></div>
+          <div class="field" style="margin:0"><label for="q-when" class="sr-only">When</label><select class="input" id="q-when"><option value="chapter">every chapter</option><option value="end">end of book</option></select></div>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" style="margin-top:12px" id="add-q">+ Add question</button>
+      </section>
+
+      <!-- 5 -->
+      <section data-step="5" hidden>
+        <h1>Readers</h1>
+        <p class="muted">List your book in Discover, invite your own readers with a private link, or both.</p>
+        <label class="check" style="margin-bottom:16px"><input type="checkbox" id="r-discover" checked> List my book in Discover so approved readers can request it</label>
+        <div class="grid-2">
+          <div class="field"><label for="r-spots">Reader spots</label><input class="input" id="r-spots" type="number" min="1" max="100" value="12" required></div>
+          <div class="field"><label for="r-weeks">Read within</label><select class="input" id="r-weeks"><option value="2">2 weeks</option><option value="3">3 weeks</option><option value="4" selected>4 weeks</option><option value="6">6 weeks</option><option value="8">8 weeks</option></select></div>
+        </div>
+        <div class="info-box"><span data-icon="info"></span><span>After you start, you'll get a private invite link to send to readers you already know. They join instantly once Ethereal Editorial has approved their reader account.</span></div>
+      </section>
+
+      <!-- 6 -->
+      <section data-step="6" hidden>
+        <h1>Review and start</h1>
+        <p class="muted">Check everything. Your manuscript is uploaded when you press Start.</p>
+        <dl class="review-list" id="review"></dl>
+      </section>
+
+      <!-- done -->
+      <section data-step="7" hidden>
+        <div class="success-box" style="padding-top:6px">
+          <span class="tick"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></span>
+          <h1 style="font-size:28px">Your beta read is live</h1>
+          <p class="muted" style="margin-top:8px">Share this private link with readers you already know.</p>
+        </div>
+        <div class="field"><label for="invite-link">Private invite link</label><input class="input filled" id="invite-link" readonly></div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-outline" id="copy-link">Copy link</button>
+          <a class="btn btn-outline" id="mail-link" href="#">Email it to readers</a>
+          <a class="btn btn-ink" id="open-ms" href="dashboard.html">Go to my manuscript</a>
+        </div>
+      </section>
+
+      <div class="flow-actions" id="actions">
+        <button type="button" class="btn btn-outline" id="prev" hidden>Back</button>
+        <span></span>
+        <button type="submit" class="btn btn-rust" id="next" disabled>Upload a file to continue</button>
+      </div>
+    </form>
+
+    <aside class="tip" id="tip"><span class="eyebrow">Tip</span><p id="tip-text"></p></aside>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var TIPS = [
+    "Remove notes to yourself and tracked changes before uploading. Readers see exactly what's in the file.",
+    "A specific blurb gets better readers. Say what the book is about, not what it's like.",
+    "Short chapter titles help readers find their place, and help you read the drop-off map.",
+    "Two or three questions per chapter is the sweet spot. More than that and answers get thin.",
+    "Readers you invite skip the queue. Discover readers are all reviewed by Ethereal Editorial.",
+    "Once started, readers get access chapter by chapter, and you'll see feedback arrive live."
+  ];
+  var DEFAULT_Q = [
+    { body: "How gripping was this chapter? (1 to 5)", frequency: "chapter", is_rating: true },
+    { body: "Did anything confuse you?", frequency: "chapter" },
+    { body: "Would you buy this book? Why or why not?", frequency: "end" }
+  ];
+  var me = null, file = null;
+  var s = EE.store.get("draft", null) || { step: 1, source: null, fileName: "", words: 0, chapters: [], questions: DEFAULT_Q.slice(), d: {} };
+  if (s.source === "file") { s.step = 1; s.source = null; s.chapters = []; } // the file itself can't survive a reload
+  var form = document.getElementById("wizard"), next = document.getElementById("next"), prev = document.getElementById("prev");
+
+  function saveDraft() {
+    EE.store.set("draft", s);
+    var el = document.getElementById("saved"); el.textContent = "Draft saved";
+  }
+
+  // ---- chapter splitting ----
+  var HEADING = /^\s*((chapter|part)\s+[\w-]+\b.*|prologue\b.*|epilogue\b.*|interlude\b.*)$/i;
+  function splitChapters(text) {
+    var lines = text.replace(/\r\n?/g, "\n").split("\n");
+    var out = [], cur = null, pre = [];
+    lines.forEach(function (line) {
+      var t = line.trim();
+      if (t && t.length <= 90 && HEADING.test(t)) {
+        if (cur) out.push(cur);
+        cur = { title: t.replace(/\s+/g, " "), lines: [] };
+      } else (cur ? cur.lines : pre).push(line);
+    });
+    if (cur) out.push(cur);
+    var preText = pre.join("\n").trim();
+    if (!out.length) return [{ title: "Chapter 1", body: tidy(text) }].map(withCount);
+    if (EE.countWords(preText) > 40) out.unshift({ title: "Opening", lines: pre });
+    return out.map(function (c) { return withCount({ title: c.title, body: tidy(c.lines.join("\n")) }); }).filter(function (c) { return c.word_count > 0; });
+  }
+  // One paragraph per block, blank line between them.
+  function tidy(t) { return t.split(/\n\s*\n|\n/).map(function (p) { return p.replace(/\s+/g, " ").trim(); }).filter(Boolean).join("\n\n"); }
+  function withCount(c) { c.word_count = EE.countWords(c.body); return c; }
+  function totalWords() { return s.chapters.reduce(function (n, c) { return n + c.word_count; }, 0); }
+
+  // ---- step 1: file ----
+  var status = document.getElementById("parse-status");
+  form.addEventListener("filechange", function (e) {
+    file = e.detail;
+    status.hidden = false; status.textContent = "Reading your manuscript…";
+    s.source = null; renderNext();
+    if (!window.mammoth) { status.textContent = "The .docx reader didn't load. Check your connection, or paste your text instead."; return; }
+    file.arrayBuffer().then(function (buf) { return window.mammoth.extractRawText({ arrayBuffer: buf }); })
+      .then(function (res) {
+        var chapters = splitChapters(res.value || "");
+        if (!chapters.length || !chapters[0].word_count) throw new Error("We couldn't find any text in that file.");
+        s.source = "file"; s.fileName = file.name; s.chapters = chapters;
+        if (!s.d.title) s.d.title = file.name.replace(/\.docx$/i, "").replace(/[_-]+/g, " ");
+        status.textContent = "Found " + EE.num(totalWords()) + " words in " + chapters.length + " chapter" + (chapters.length > 1 ? "s" : "") + ".";
+        renderNext();
+      })
+      .catch(function (err) { file = null; status.textContent = err.message || "That file couldn't be read. Try saving it again as .docx."; });
+  });
+  var paste = document.getElementById("paste");
+  function mode(p) { document.getElementById("upload-mode").hidden = p; document.getElementById("paste-mode").hidden = !p; if (p) paste.focus(); }
+  document.getElementById("to-paste").addEventListener("click", function () { mode(true); });
+  document.getElementById("to-upload").addEventListener("click", function () { mode(false); });
+  paste.addEventListener("input", function () {
+    if (EE.countWords(paste.value) >= 50) { s.source = "paste"; s.chapters = splitChapters(paste.value); }
+    else if (s.source === "paste") s.source = null;
+    renderNext();
+  });
+
+  // ---- step 3: chapters ----
+  var chEl = document.getElementById("chapters");
+  function renderChapters() {
+    chEl.innerHTML = s.chapters.map(function (c, i) {
+      return '<div class="chapter-item"><span>' + (i + 1) + '</span><input value="' + EE.esc(c.title) + '" data-i="' + i + '" maxlength="120" aria-label="Chapter ' + (i + 1) + ' title"><small>' + EE.num(c.word_count) + ' words</small><button type="button" class="icon-btn" data-del="' + i + '" aria-label="Remove chapter">' + EE.ICONS.trash + '</button></div>';
+    }).join("");
+  }
+  chEl.addEventListener("input", function (e) { if (e.target.dataset.i) s.chapters[e.target.dataset.i].title = e.target.value; });
+  chEl.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-del]"); if (!b) return;
+    if (s.chapters.length === 1) return EE.toast("A book needs at least one chapter.", "err");
+    s.chapters.splice(Number(b.dataset.del), 1); renderChapters();
+  });
+
+  // ---- step 4: questions ----
+  var qEl = document.getElementById("questions");
+  function renderQuestions() {
+    qEl.innerHTML = s.questions.map(function (q, i) {
+      return '<div class="q-item"><div>' + EE.esc(q.body) + ' <small>· ' + (q.frequency === "end" ? "end of book" : "every chapter") + (q.is_rating ? " · rating" : "") + '</small></div><button type="button" class="icon-btn" data-delq="' + i + '" aria-label="Remove question">' + EE.ICONS.trash + '</button></div>';
+    }).join("") || '<p class="muted small">No questions yet. Readers can still comment on any line.</p>';
+  }
+  qEl.addEventListener("click", function (e) { var b = e.target.closest("[data-delq]"); if (b) { s.questions.splice(Number(b.dataset.delq), 1); renderQuestions(); } });
+  function addQ() {
+    var inp = document.getElementById("q-new"), t = inp.value.trim();
+    if (!t) return inp.focus();
+    s.questions.push({ body: t, frequency: document.getElementById("q-when").value }); inp.value = ""; renderQuestions();
+  }
+  document.getElementById("add-q").addEventListener("click", addQ);
+  document.getElementById("q-new").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); addQ(); } });
+
+  // ---- fields ----
+  var DFIELDS = { "d-title": "title", "d-pen": "pen", "d-genre": "genre", "d-aud": "audience", "d-blurb": "blurb", "d-stage": "stage", "d-notes": "notes", "d-wants": "wants", "r-spots": "spots", "r-weeks": "weeks" };
+  function pullFields() {
+    Object.keys(DFIELDS).forEach(function (id) { s.d[DFIELDS[id]] = document.getElementById(id).value.trim(); });
+    s.d.discover = document.getElementById("r-discover").checked;
+  }
+  function pushFields() {
+    Object.keys(DFIELDS).forEach(function (id) { var v = s.d[DFIELDS[id]]; if (v !== undefined && v !== "") document.getElementById(id).value = v; });
+    if (s.d.discover !== undefined) document.getElementById("r-discover").checked = s.d.discover;
+    if (!document.getElementById("d-pen").value && me) document.getElementById("d-pen").value = me.name;
+  }
+
+  function renderReview() {
+    var rows = [
+      ["Title", s.d.title], ["Pen name", s.d.pen], ["Genre", s.d.genre + " · " + s.d.audience + " · " + s.d.stage],
+      ["Length", EE.num(totalWords()) + " words · " + s.chapters.length + " chapters"],
+      ["Source", s.source === "paste" ? "Pasted text" : s.fileName],
+      ["Questions", s.questions.length + " (" + s.questions.filter(function (q) { return q.frequency === "chapter"; }).length + " per chapter)"],
+      ["Discover", s.d.discover ? "Listed · " + s.d.spots + " spots · read within " + s.d.weeks + " weeks" : "Private (invite link only)"]
+    ];
+    document.getElementById("review").innerHTML = rows.map(function (r) { return "<dt>" + r[0] + "</dt><dd>" + EE.esc(r[1] || "—") + "</dd>"; }).join("");
+  }
+
+  var LABELS = { 1: "Continue", 2: "Continue to chapters", 3: "Continue to questions", 4: "Continue to readers", 5: "Review", 6: "Start beta read" };
+  function renderNext() {
+    var ok = s.step !== 1 || !!s.source;
+    next.disabled = !ok;
+    next.textContent = ok ? LABELS[s.step] : "Upload a file to continue";
+  }
+  function render() {
+    EE.$$("[data-step]").forEach(function (sec) { sec.hidden = Number(sec.dataset.step) !== s.step; });
+    EE.$$("#stepper li").forEach(function (li, i) { li.classList.toggle("is-on", i + 1 === s.step); li.classList.toggle("is-done", i + 1 < s.step); });
+    prev.hidden = s.step === 1 || s.step === 7;
+    document.getElementById("actions").hidden = s.step === 7;
+    document.getElementById("tip-text").textContent = TIPS[Math.min(s.step, 6) - 1];
+    if (s.step === 3) renderChapters();
+    if (s.step === 4) renderQuestions();
+    if (s.step === 6) renderReview();
+    renderNext();
+  }
+
+  // ---- create everything ----
+  function create() {
+    var path = null;
+    var upload = (s.source === "file" && file)
+      ? EE.q(EE.sb.storage.from("manuscripts").upload(me.id + "/" + EE.uuid() + "-" + EE.safeName(file.name), file, { upsert: false }))
+          .then(function (r) { path = r.path; })
+      : Promise.resolve();
+    var msId = null;
+    return upload.then(function () {
+      return EE.q(EE.sb.from("manuscripts").insert({
+        title: s.d.title, pen_name: s.d.pen, genre: s.d.genre, audience: s.d.audience, stage: s.d.stage,
+        blurb: s.d.blurb, content_notes: s.d.notes || null, wants: s.d.wants || null,
+        word_count: totalWords(), listed: !!s.d.discover, spots: Math.max(1, Math.min(100, Number(s.d.spots) || 12)),
+        read_weeks: Number(s.d.weeks) || 4, file_path: path
+      }).select("id").single());
+    }).then(function (ms) {
+      msId = ms.id;
+      var chapters = s.chapters.map(function (c, i) { return { manuscript_id: msId, idx: i + 1, title: c.title.trim() || "Chapter " + (i + 1), body: c.body, word_count: c.word_count }; });
+      // Insert in batches so very long books stay under request limits.
+      var batches = [];
+      for (var i = 0; i < chapters.length; i += 10) batches.push(chapters.slice(i, i + 10));
+      return batches.reduce(function (p, b) { return p.then(function () { return EE.q(EE.sb.from("chapters").insert(b)); }); }, Promise.resolve());
+    }).then(function () {
+      if (!s.questions.length) return;
+      return EE.q(EE.sb.from("questions").insert(s.questions.map(function (q, i) { return { manuscript_id: msId, idx: i, body: q.body, frequency: q.frequency, is_rating: !!q.is_rating }; })));
+    }).then(function () {
+      return EE.q(EE.sb.from("manuscript_invites").select("code").eq("manuscript_id", msId).single());
+    }).then(function (inv) {
+      var link = location.origin + "/book.html?id=" + msId + "&invite=" + inv.code;
+      document.getElementById("invite-link").value = link;
+      document.getElementById("mail-link").href = "mailto:?subject=" + encodeURIComponent("Beta read " + s.d.title) + "&body=" + encodeURIComponent("I'd love your feedback on my manuscript \"" + s.d.title + "\". Join the beta read here:\n\n" + link + "\n\nIf you don't have an account yet, sign up as a beta reader first.");
+      document.getElementById("open-ms").href = "manuscript.html?id=" + msId;
+      EE.store.del("draft");
+    }).catch(function (err) {
+      // Don't leave a half-made manuscript behind.
+      if (msId) EE.sb.from("manuscripts").delete().eq("id", msId).then(function () {});
+      if (path) EE.sb.storage.from("manuscripts").remove([path]).then(function () {});
+      throw err;
+    });
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (s.step === 1 && !s.source) return;
+    if ((s.step === 2 || s.step === 5) && !EE.validate(EE.$('[data-step="' + s.step + '"]'))) return;
+    if (s.step === 3 && s.chapters.some(function (c) { return !c.title.trim(); })) return EE.toast("Give every chapter a title.", "err");
+    if (s.step > 1) pullFields(); else pushFields();
+    if (s.step === 6) {
+      EE.busy(next, true, "Uploading…");
+      create().then(function () { s.step = 7; render(); }).catch(function (err) { EE.busy(next, false); EE.fail(err); });
+      return;
+    }
+    s.step++; saveDraft(); render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  prev.addEventListener("click", function () { pullFields(); s.step--; saveDraft(); render(); });
+  document.getElementById("copy-link").addEventListener("click", function () {
+    var inp = document.getElementById("invite-link");
+    (navigator.clipboard ? navigator.clipboard.writeText(inp.value) : Promise.reject()).then(function () { EE.toast("Link copied.", "ok"); }, function () { inp.select(); EE.toast("Press Ctrl+C to copy."); });
+  });
+  document.getElementById("cancel").addEventListener("click", function (e) {
+    if (!s.source || s.step === 7) return;
+    e.preventDefault();
+    EE.modal('<h3>Leave this beta read?</h3><p class="muted">Your details and pasted text are saved in this browser. An uploaded file needs to be chosen again.</p><div class="btn-row"><button class="btn btn-outline btn-sm" id="discard">Discard draft</button><a class="btn btn-ink btn-sm" href="dashboard.html">Keep draft &amp; leave</a></div>');
+    document.getElementById("discard").onclick = function () { EE.store.del("draft"); location.href = "dashboard.html"; };
+  });
+
+  EE.guard(["author"]).then(function (p) {
+    me = p;
+    pushFields();
+    if (s.source === "paste" && s.chapters.length) { mode(true); paste.value = s.chapters.map(function (c) { return c.title + "\n\n" + c.body; }).join("\n\n"); }
+    render();
+  });
+});
+</script>
+</body>
+</html>

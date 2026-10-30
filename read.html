@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading — Ethereal Editorial</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="read-top">
+  <div class="bar">
+    <a class="back" href="discover.html?tab=reading" id="back"><span data-icon="back"></span>Reading list</a>
+    <span class="sep"></span>
+    <div class="t"><strong id="bk-title">Loading…</strong><small id="bk-sub"></small></div>
+    <div class="prog"><span id="prog-text"></span><div class="progress teal"><i id="prog-bar" style="width:0"></i></div></div>
+  </div>
+</header>
+
+<div class="info-box warn" id="blocked" hidden style="max-width:680px;margin:24px auto"><span data-icon="lock"></span><span id="blocked-text"></span></div>
+
+<div class="reader" id="reader" hidden>
+  <nav class="chapters" aria-label="Chapters"><span class="eyebrow">Chapters</span><div id="ch-list" style="display:contents"></div></nav>
+
+  <article class="page" id="page">
+    <span class="eyebrow" id="ch-eyebrow"></span>
+    <h1 id="ch-title"></h1>
+    <div class="hint-bar" id="hint">Tap any paragraph to leave a comment or reaction for the author.</div>
+    <div id="text"><p class="loading-line">Loading chapter…</p></div>
+
+    <div class="questions" id="questions">
+      <h2>End of chapter questions</h2>
+      <p class="tiny muted" style="margin-bottom:14px">Set by the author</p>
+      <div id="q-list"></div>
+      <div class="flow-actions" style="border:0;margin-top:6px;padding-top:0">
+        <button class="btn btn-outline" id="prev-ch">Previous chapter</button>
+        <button class="btn btn-teal" id="submit-ch">Submit</button>
+      </div>
+    </div>
+  </article>
+
+  <aside class="side-panel" id="side">
+    <div class="comment-box" id="cbox" hidden>
+      <span class="eyebrow">Commenting on</span>
+      <div class="quote" id="cquote"></div>
+      <div class="react-row" id="reacts"><button class="chip">Loved this</button><button class="chip">Confused</button><button class="chip">Slow here</button><button class="chip">Typo</button></div>
+      <div class="field" style="margin-bottom:12px"><label for="ctext">Your comment</label><textarea class="input" id="ctext" placeholder="What did you think here?" maxlength="4000" style="min-height:76px"></textarea></div>
+      <div class="btn-row" style="justify-content:flex-end"><button class="btn btn-ghost btn-sm" id="ccancel">Cancel</button><button class="btn btn-rust btn-sm" id="cpost">Post comment</button></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="font-size:16px;font-weight:600">Your comments</h3><span class="tiny muted" id="ccount"></span></div>
+    <div id="mine" style="display:flex;flex-direction:column;gap:10px"></div>
+    <p class="tiny muted">This manuscript is confidential. Copying and downloading are turned off.</p>
+  </aside>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var id = EE.param("id");
+  var me, M, acc, isAuthor = false, chapters = [], questions = [];
+  var ch = 1, body = [], comments = [], answers = {}, active = null, reaction = null;
+  var total = 0;
+
+  function unlocked() { return isAuthor ? total : (acc.finished ? total : Math.min(acc.unlocked, total)); }
+  function block(html) { document.getElementById("blocked").hidden = false; document.getElementById("blocked-text").innerHTML = html; document.getElementById("reader").hidden = true; }
+
+  function renderChapters() {
+    var u = unlocked(), html = "";
+    for (var i = 1; i <= total; i++) {
+      var c = chapters.filter(function (x) { return x.idx === i; })[0];
+      var cls = i === ch ? "is-on" : i > u ? "locked" : "";
+      var lab = isAuthor ? "" : (i < acc.unlocked || acc.finished) ? "Read" : i === acc.unlocked ? "Reading" : "";
+      html += '<button class="' + cls + '" data-ch="' + i + '"' + (i > u ? ' aria-disabled="true"' : "") + ' title="' + EE.esc(c ? c.title : "Locked") + '">Chapter ' + i + "<small>" + lab + "</small></button>";
+    }
+    document.getElementById("ch-list").innerHTML = html;
+  }
+  function renderText() {
+    var counts = {};
+    comments.forEach(function (c) { counts[c.para_idx] = (counts[c.para_idx] || 0) + 1; });
+    document.getElementById("text").innerHTML = body.map(function (t, i) {
+      return '<p class="para' + (counts[i] ? " has-c" : "") + (active === i ? " is-active" : "") + '" data-p="' + i + '"' + (isAuthor ? "" : ' tabindex="0"') + ">" + EE.esc(t) + (counts[i] ? '<span class="cnt">' + counts[i] + "</span>" : "") + "</p>";
+    }).join("") || '<p class="muted">This chapter is empty.</p>';
+  }
+  function renderMine() {
+    document.getElementById("ccount").textContent = comments.length + " in this chapter";
+    document.getElementById("mine").innerHTML = comments.map(function (c) {
+      var q = c.quote || "";
+      return '<div class="my-comment">' + (c.reaction ? '<span class="r">' + EE.esc(c.reaction) + "</span>" : "") + '<div class="quote">' + EE.esc(q.length > 70 ? q.slice(0, 70) + "…" : q) + "</div>" + EE.esc(c.body || "") +
+        "<small>" + EE.ago(c.created_at) + ' · Only you and the author can see this · <button class="text-btn" style="font-size:11.5px" data-del="' + c.id + '">Delete</button></small></div>';
+    }).join("") || '<p class="tiny muted">No comments yet. Tap a paragraph to add one.</p>';
+  }
+  function renderQuestions() {
+    var last = ch === total;
+    var qs = questions.filter(function (q) { return q.frequency === "chapter" || (last && q.frequency === "end"); });
+    document.getElementById("q-list").innerHTML = qs.map(function (q) {
+      var key = q.id + ":" + (q.frequency === "end" ? 0 : ch), a = answers[key] || {};
+      if (q.is_rating) {
+        var btns = [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" class="' + (a.score === n ? "is-on" : "") + '" data-score="' + n + '">' + n + "</button>"; }).join("");
+        return '<p class="small" style="font-weight:600;color:var(--ink)">' + EE.esc(q.body.replace(/\s*\(1 to 5\)\s*$/, "")) + '</p><div class="scale" data-q="' + key + '">' + btns + "</div>";
+      }
+      return '<div class="field"><label>' + EE.esc(q.body) + (q.frequency === "end" ? ' <span class="muted" style="font-weight:400">· end of book</span>' : "") + '</label><textarea class="input" data-q="' + key + '" maxlength="4000" placeholder="Your answer...">' + EE.esc(a.body || "") + "</textarea></div>";
+    }).join("");
+    var sub = document.getElementById("submit-ch");
+    sub.textContent = last ? (acc && acc.finished ? "Update answers" : "Submit and finish the book") : ch < (acc ? acc.unlocked : 0) ? "Update answers and go to chapter " + (ch + 1) : "Submit and go to chapter " + (ch + 1);
+    document.getElementById("prev-ch").disabled = ch === 1;
+    document.getElementById("questions").hidden = isAuthor;
+  }
+
+  function loadChapter(n) {
+    ch = n; active = null; closeBox();
+    var c = chapters.filter(function (x) { return x.idx === n; })[0];
+    document.getElementById("ch-eyebrow").textContent = "Chapter " + n;
+    document.getElementById("ch-title").textContent = c ? c.title : "";
+    document.getElementById("prog-text").textContent = "Chapter " + n + " of " + total;
+    var done = isAuthor ? total : acc.finished ? total : acc.unlocked - 1;
+    document.getElementById("prog-bar").style.width = (total ? done / total * 100 : 0) + "%";
+    document.getElementById("text").innerHTML = '<p class="loading-line">Loading chapter…</p>';
+    renderChapters();
+    history.replaceState(null, "", "?id=" + id + "&ch=" + n);
+    return Promise.all([
+      EE.q(EE.sb.from("chapters").select("body").eq("manuscript_id", id).eq("idx", n).single()),
+      isAuthor ? Promise.resolve([]) : EE.q(EE.sb.from("comments").select("*").eq("manuscript_id", id).eq("chapter_idx", n).eq("reader_id", me.id).order("created_at")),
+      isAuthor ? Promise.resolve([]) : EE.q(EE.sb.from("answers").select("*").eq("manuscript_id", id).eq("reader_id", me.id).in("chapter_idx", [0, n]))
+    ]).then(function (r) {
+      body = String(r[0].body || "").split(/\n\s*\n/).filter(Boolean);
+      comments = r[1];
+      answers = {}; r[2].forEach(function (a) { answers[a.question_id + ":" + a.chapter_idx] = a; });
+      renderText(); renderMine(); renderQuestions();
+    }).catch(EE.fail);
+  }
+
+  // ---- comments ----
+  var box = document.getElementById("cbox"), ctext = document.getElementById("ctext");
+  function openBox(i) {
+    if (isAuthor) return;
+    active = i; reaction = null;
+    document.getElementById("cquote").textContent = body[i];
+    EE.$$("#reacts .chip").forEach(function (c) { c.classList.remove("is-on"); });
+    ctext.value = ""; box.hidden = false; renderText();
+    if (window.innerWidth < 1080) box.scrollIntoView({ behavior: "smooth", block: "center" });
+    ctext.focus({ preventScroll: window.innerWidth >= 1080 });
+  }
+  function closeBox() { active = null; box.hidden = true; }
+  document.getElementById("text").addEventListener("click", function (e) { var p = e.target.closest(".para"); if (p) openBox(Number(p.dataset.p)); });
+  document.getElementById("text").addEventListener("keydown", function (e) { if (e.key === "Enter" && e.target.classList.contains("para")) openBox(Number(e.target.dataset.p)); });
+  document.getElementById("reacts").addEventListener("click", function (e) {
+    var c = e.target.closest(".chip"); if (!c) return;
+    var on = !c.classList.contains("is-on");
+    EE.$$("#reacts .chip").forEach(function (x) { x.classList.remove("is-on"); });
+    c.classList.toggle("is-on", on); reaction = on ? c.textContent : null;
+  });
+  document.getElementById("ccancel").addEventListener("click", function () { closeBox(); renderText(); });
+  document.getElementById("cpost").addEventListener("click", function () {
+    var t = ctext.value.trim(), btn = this;
+    if (!t && !reaction) { EE.setError(ctext, "Add a comment or pick a reaction."); return; }
+    EE.busy(btn, true, "Posting…");
+    EE.q(EE.sb.from("comments").insert({ manuscript_id: id, chapter_idx: ch, para_idx: active, quote: body[active].slice(0, 500), reaction: reaction, body: t || null }).select("*").single())
+      .then(function (row) { comments.push(row); EE.busy(btn, false); closeBox(); renderText(); renderMine(); EE.toast("Comment sent to the author.", "ok"); })
+      .catch(function (err) { EE.busy(btn, false); EE.fail(err); });
+  });
+  document.getElementById("mine").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-del]"); if (!b) return;
+    EE.q(EE.sb.from("comments").delete().eq("id", b.dataset.del))
+      .then(function () { comments = comments.filter(function (c) { return c.id !== b.dataset.del; }); renderText(); renderMine(); })
+      .catch(EE.fail);
+  });
+
+  // ---- chapters + questions ----
+  document.getElementById("ch-list").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-ch]"); if (!b) return;
+    var n = Number(b.dataset.ch);
+    if (n > unlocked()) return EE.toast("Chapters unlock one at a time. Finish chapter " + unlocked() + " first.");
+    loadChapter(n); window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  document.getElementById("q-list").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-score]"); if (!b) return;
+    EE.$$("button", b.parentNode).forEach(function (x) { x.classList.toggle("is-on", x === b); });
+  });
+  document.getElementById("prev-ch").addEventListener("click", function () { if (ch > 1) { loadChapter(ch - 1); window.scrollTo({ top: 0, behavior: "smooth" }); } });
+  document.getElementById("submit-ch").addEventListener("click", function () {
+    var btn = this, rows = [], missing = null;
+    EE.$$("#q-list [data-q]").forEach(function (el) {
+      var parts = el.dataset.q.split(":"), row = { manuscript_id: id, question_id: parts[0], chapter_idx: Number(parts[1]), reader_id: me.id };
+      if (el.classList.contains("scale")) {
+        var on = EE.$(".is-on", el);
+        if (!on) { missing = missing || el; return; }
+        row.score = Number(on.textContent);
+      } else {
+        if (!el.value.trim()) return;
+        row.body = el.value.trim();
+      }
+      rows.push(row);
+    });
+    if (missing) { EE.toast("Pick a rating from 1 to 5 first.", "err"); missing.scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+    EE.busy(btn, true, "Sending…");
+    (rows.length ? EE.q(EE.sb.from("answers").upsert(rows, { onConflict: "question_id,chapter_idx,reader_id" })) : Promise.resolve())
+      .then(function () { return EE.q(EE.sb.rpc("advance_chapter", { m: id, ch: ch })); })
+      .then(function () { return EE.q(EE.sb.from("access").select("*").eq("id", acc.id).single()); })
+      .then(function (a) {
+        acc = a; EE.busy(btn, false);
+        if (ch === total) { EE.toast(acc.finished ? "You finished " + M.title + ". Thank you for reading!" : "Answers saved.", "ok"); return loadChapter(ch); }
+        return EE.q(EE.sb.from("chapters").select("idx, title").eq("manuscript_id", id).order("idx")).then(function (list) {
+          chapters = list;
+          EE.toast("Answers sent. Chapter " + (ch + 1) + " unlocked.", "ok");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          return loadChapter(ch + 1);
+        });
+      })
+      .catch(function (err) { EE.busy(btn, false); EE.fail(err); });
+  });
+
+  // Confidential manuscript: block copy, cut and right-click on the page text.
+  ["copy", "cut", "contextmenu", "dragstart"].forEach(function (ev) {
+    document.getElementById("page").addEventListener(ev, function (e) { if (!e.target.closest("textarea, input")) { e.preventDefault(); if (ev === "copy") EE.toast("Copying is turned off for confidential manuscripts."); } });
+  });
+
+  EE.guard(["reader", "author"]).then(function (p) {
+    me = p;
+    if (!id) return location.replace("discover.html?tab=reading");
+    return EE.q(EE.sb.from("manuscripts").select("id, title, pen_name, author_id, chapter_count").eq("id", id).maybeSingle()).then(function (m) {
+      if (!m) return block("This manuscript isn't available. <a class=\"u-link\" href=\"discover.html\">Browse Discover</a>");
+      M = m; total = m.chapter_count;
+      isAuthor = m.author_id === me.id || me.role === "admin";
+      document.title = m.title + " · Reading — Ethereal Editorial";
+      document.getElementById("bk-title").textContent = m.title;
+      document.getElementById("bk-sub").textContent = "by " + m.pen_name + " · Confidential manuscript";
+      if (isAuthor) {
+        document.getElementById("back").href = "manuscript.html?id=" + id; document.getElementById("back").lastChild.textContent = "Back to manuscript";
+        document.getElementById("hint").textContent = "Author preview. This is exactly what your readers see.";
+        document.getElementById("side").hidden = true;
+      }
+      var accessP = isAuthor ? Promise.resolve(null) : EE.q(EE.sb.from("access").select("*").eq("manuscript_id", id).eq("reader_id", me.id).maybeSingle());
+      return accessP.then(function (a) {
+        if (!isAuthor && (!a || a.status !== "accepted")) {
+          return block(me.reader_status !== "approved" ? "<b>Waiting for approval.</b> Manuscripts open once Ethereal Editorial approves your reader account." : "You don't have access to this book yet. <a class=\"u-link\" href=\"book.html?id=" + id + "\">Request to read it</a>.");
+        }
+        acc = a;
+        return EE.q(EE.sb.from("chapters").select("idx, title").eq("manuscript_id", id).order("idx")).then(function (list) {
+          chapters = list;
+          return isAuthor ? [] : EE.q(EE.sb.from("questions").select("*").eq("manuscript_id", id).order("idx"));
+        }).then(function (qs) {
+          questions = qs;
+          document.getElementById("reader").hidden = false;
+          var want = Number(EE.param("ch")) || (isAuthor ? 1 : Math.min(acc.finished ? 1 : acc.unlocked, total));
+          return loadChapter(Math.max(1, Math.min(want, unlocked())));
+        });
+      });
+    });
+  }).catch(EE.fail);
+});
+</script>
+</body>
+</html>

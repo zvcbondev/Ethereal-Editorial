@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choose your edit — Ethereal Editorial</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="flow-top">
+  <div class="bar" style="max-width:860px">
+    <a class="back" href="edits.html"><span data-icon="back"></span>My edits</a>
+    <a class="title serif" href="index.html" style="text-decoration:none">Ethereal Editorial</a>
+    <span><span data-icon="lock"></span>Secure order</span>
+  </div>
+</header>
+
+<main class="flow" style="max-width:860px">
+  <ol class="stepper teal" id="stepper">
+    <li><i>1</i><span>Package</span></li><li><i>2</i><span>Payment</span></li><li><i>3</i><span>Bank details</span></li><li><i>4</i><span>Confirm</span></li>
+  </ol>
+
+  <div class="flow-grid wide-side">
+    <form class="card flow-card" id="order" novalidate>
+      <section data-step="1">
+        <h1>Choose your edit</h1>
+        <p class="muted" id="rec-line">Pick the edit that fits where your book is now. We recommend Line + Copy Edit for most first novels.</p>
+        <div id="packages"></div>
+        <div class="grid-2" style="margin-top:8px">
+          <div class="field"><label for="book">Book title</label><input class="input" id="book" required maxlength="200" placeholder="Working title"></div>
+          <div class="field"><label for="words">Word count</label><input class="input" id="words" type="number" min="1000" step="100" required placeholder="85000"><span class="hint">The full manuscript</span></div>
+        </div>
+        <div class="field"><label for="turn">Turnaround</label><select class="input" id="turn"><option>2 to 3 weeks</option><option selected>3 to 4 weeks</option><option>4 to 6 weeks</option><option>6 to 8 weeks</option></select><span class="hint">Starts when your deposit is confirmed</span></div>
+      </section>
+
+      <section data-step="2" hidden>
+        <h1>How would you like to pay?</h1>
+        <p class="muted">Most authors pay half now to book their slot and half on delivery.</p>
+        <label class="radio-card is-on"><input type="radio" name="plan" value="deposit" checked><div class="body"><strong>50% deposit now</strong><p>The rest is due when your edited manuscript is delivered.</p></div><span class="rate" data-plan-amount="deposit"></span></label>
+        <label class="radio-card"><input type="radio" name="plan" value="full"><div class="body"><strong>Pay in full</strong><p>One payment, nothing due on delivery.</p></div><span class="rate" data-plan-amount="full"></span></label>
+        <div class="field" style="margin-top:18px"><label for="method">Payment method</label>
+          <select class="input" id="method"><option>Bank transfer</option><option>Wise</option><option>PayPal</option><option>Payoneer</option></select></div>
+        <div class="info-box"><span data-icon="info"></span><span>Prices are set in US dollars. Any bank or transfer fees are paid by the sender.</span></div>
+      </section>
+
+      <section data-step="3" hidden>
+        <h1>Bank details</h1>
+        <p class="muted">For your safety, payment details are only ever shared inside your private Ethereal Editorial chat.</p>
+        <div class="info-box warn"><span data-icon="lock"></span><span><b>Never pay details sent by email, Facebook or anywhere else.</b> If anyone sends you payment details outside your private chat, don't pay and let us know.</span></div>
+        <div class="bank" style="margin-bottom:14px">
+          <div class="line"><span>Amount to send</span><b data-due></b></div>
+          <div class="line"><span>Payment reference</span><b data-ref></b></div>
+          <div class="line"><span>Method</span><b data-method></b></div>
+        </div>
+        <a class="btn btn-teal btn-block" href="chat.html" target="_blank" rel="noopener" style="margin-bottom:22px">Open my private chat for payment details</a>
+        <p class="small" style="margin-bottom:14px;color:var(--ink);font-weight:600">Once you've sent the payment, tell us about it:</p>
+        <div class="grid-2">
+          <div class="field"><label for="p-name">Name on the sending account</label><input class="input" id="p-name" required maxlength="200" autocomplete="name"></div>
+          <div class="field"><label for="p-date">Date sent</label><input class="input" id="p-date" type="date" required></div>
+        </div>
+        <label class="check"><input type="checkbox" id="p-ok" required> I used the reference above so you can match my payment.</label>
+      </section>
+
+      <section data-step="4" hidden>
+        <div class="success-box" style="padding-top:8px">
+          <span class="tick"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></span>
+          <h1 style="font-size:28px">Payment noted, thank you</h1>
+          <p class="muted" style="margin:10px auto 0;max-width:440px">We'll confirm your payment within one working day and book your <b style="color:var(--ink)" data-pkg-name></b>. Order reference <b style="color:var(--ink)" data-ref></b>.</p>
+        </div>
+        <div class="bank">
+          <div class="line"><span>Book</span><b data-book></b></div>
+          <div class="line"><span>Package</span><b data-pkg-name></b></div>
+          <div class="line"><span>Paid now</span><b data-due></b></div>
+          <div class="line"><span>Due on delivery</span><b data-later></b></div>
+          <div class="line"><span>Turnaround</span><b data-turn></b></div>
+        </div>
+        <div class="btn-row" style="justify-content:center;margin-top:22px">
+          <a class="btn btn-outline" href="chat.html">Open chat</a>
+          <a class="btn btn-ink" href="edits.html">Go to my edits</a>
+        </div>
+      </section>
+
+      <div class="flow-actions" id="actions">
+        <button type="button" class="btn btn-outline" id="prev" hidden>Back</button>
+        <span></span>
+        <button type="submit" class="btn btn-ink" id="next">Continue</button>
+      </div>
+    </form>
+
+    <aside class="card summary" id="summary">
+      <h3>Order summary</h3>
+      <div class="book"><div class="cover"></div><div><strong data-book></strong><div class="tiny muted"><span data-words></span> words</div></div></div>
+      <div class="line"><span data-pkg-name></span><span data-rate></span></div>
+      <div class="line"><span><span data-k></span> × 1,000 words</span><b data-total></b></div>
+      <div class="line"><span>Sample edit</span><span class="free">Free</span></div>
+      <div class="total">
+        <div class="line"><span>Due now</span><span data-due></span></div>
+        <div class="line"><span>Due on delivery</span><span data-later></span></div>
+        <p class="tiny muted">Prices are set in US dollars.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var PKGS = [
+    { id: "line", name: "Line + Copy Edit", rate: 70, desc: "Style, flow, tone and pacing, plus grammar and consistency. Editorial note included.", rec: true },
+    { id: "copy", name: "Copy Edit", rate: 50, desc: "Grammar, spelling, punctuation, consistency and continuity. Style sheet included." },
+    { id: "proof", name: "Proofread", rate: 30, desc: "A final clean pass for typos and formatting before publishing." }
+  ];
+  var TYPE_TO_PKG = { "Copy Edit": "copy", "Proofread": "proof" };
+  var me = null, order = null;
+  var s = { step: 1, pkg: "line", plan: "deposit" };
+
+  document.getElementById("packages").innerHTML = PKGS.map(function (p) {
+    return '<label class="radio-card"><input type="radio" name="pkg" value="' + p.id + '"><div class="body"><strong>' + p.name + '</strong>' + (p.rec ? '<span class="rec">Recommended</span>' : "") + '<p>' + p.desc + '</p></div><span class="rate">$' + p.rate + ' / 1k words</span></label>';
+  }).join("");
+  document.getElementById("p-date").valueAsDate = new Date();
+
+  function setAll(sel, text) { EE.$$(sel).forEach(function (el) { el.textContent = text; }); }
+  function pkg() { return PKGS.filter(function (x) { return x.id === s.pkg; })[0]; }
+  // Preview only; the database recalculates prices when the order is saved.
+  function calc() {
+    var p = pkg();
+    var words = Number(document.getElementById("words").value) || 0;
+    var total = order ? Number(order.total) : Math.round(words / 1000 * p.rate * 100) / 100;
+    var now = order ? Number(order.due_now) : (s.plan === "full" ? total : Math.round(total * 50) / 100);
+    setAll("[data-book]", (order && order.book_title) || document.getElementById("book").value || "Your book");
+    setAll("[data-words]", EE.num(order ? order.word_count : words));
+    setAll("[data-pkg-name]", p.name);
+    setAll("[data-rate]", "$" + p.rate + " / 1k words");
+    setAll("[data-k]", ((order ? order.word_count : words) / 1000).toLocaleString("en-US", { maximumFractionDigits: 1 }));
+    setAll("[data-total]", EE.money(total));
+    setAll("[data-due]", EE.money(now));
+    setAll("[data-later]", EE.money(Math.round((total - now) * 100) / 100));
+    setAll("[data-ref]", order ? order.reference : "—");
+    setAll("[data-method]", (order && order.method) || document.getElementById("method").value);
+    setAll("[data-turn]", (order && order.turnaround) || document.getElementById("turn").value);
+    document.querySelector('[data-plan-amount="deposit"]').textContent = EE.money(Math.round(total * 50) / 100);
+    document.querySelector('[data-plan-amount="full"]').textContent = EE.money(total);
+    EE.$$("input[name=pkg]").forEach(function (r) { r.checked = r.value === s.pkg; r.closest(".radio-card").classList.toggle("is-on", r.checked); });
+    EE.$$("input[name=plan]").forEach(function (r) { r.checked = r.value === s.plan; r.closest(".radio-card").classList.toggle("is-on", r.checked); });
+  }
+  document.getElementById("order").addEventListener("change", function (e) {
+    if (order && s.step < 3) order = null; // editing an unsaved choice
+    if (e.target.name === "pkg") s.pkg = e.target.value;
+    if (e.target.name === "plan") s.plan = e.target.value;
+    calc();
+  });
+  ["words", "book"].forEach(function (id) { document.getElementById(id).addEventListener("input", calc); });
+
+  var next = document.getElementById("next"), prev = document.getElementById("prev");
+  function render() {
+    EE.$$("[data-step]").forEach(function (sec) { sec.hidden = Number(sec.dataset.step) !== s.step; });
+    EE.$$("#stepper li").forEach(function (li, i) { li.classList.toggle("is-on", i + 1 === s.step); li.classList.toggle("is-done", i + 1 < s.step); });
+    prev.hidden = s.step === 1 || s.step === 3;
+    next.textContent = s.step === 2 ? "Place order" : s.step === 3 ? "I've sent the payment" : "Continue";
+    document.getElementById("actions").hidden = s.step === 4;
+    document.getElementById("summary").hidden = s.step === 4;
+    calc();
+  }
+
+  function placeOrder() {
+    return EE.q(EE.sb.from("orders").insert({
+      book_title: document.getElementById("book").value.trim(),
+      package: s.pkg,
+      word_count: Number(document.getElementById("words").value),
+      plan: s.plan,
+      method: document.getElementById("method").value,
+      turnaround: document.getElementById("turn").value
+    }).select("*").single()).then(function (o) {
+      order = o;
+      // Opens the private chat thread so the owner can reply with payment details.
+      return EE.q(EE.sb.from("messages").insert({
+        thread_id: me.id,
+        body: "New order " + o.reference + ": " + pkg().name + " for \"" + o.book_title + "\" (" + EE.num(o.word_count) + " words). " +
+          EE.money(o.due_now) + " due now by " + o.method + ". Please send me the payment details."
+      }));
+    });
+  }
+
+  document.getElementById("order").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var sec = EE.$('[data-step="' + s.step + '"]');
+    if (!EE.validate(sec)) return;
+    if (s.step === 2) {
+      EE.busy(next, true, "Placing order…");
+      placeOrder().then(function () { EE.busy(next, false); s.step = 3; render(); history.replaceState(null, "", "?order=" + order.id); })
+        .catch(function (err) { EE.busy(next, false); EE.fail(err); });
+      return;
+    }
+    if (s.step === 3) {
+      EE.busy(next, true);
+      EE.q(EE.sb.from("orders").update({ payer_name: document.getElementById("p-name").value.trim(), sent_on: document.getElementById("p-date").value, status: "payment_sent" }).eq("id", order.id))
+        .then(function () {
+          return EE.sb.from("messages").insert({ thread_id: me.id, body: "Payment sent for " + order.reference + " on " + document.getElementById("p-date").value + " from " + document.getElementById("p-name").value.trim() + "." });
+        })
+        .then(function () { EE.busy(next, false); s.step = 4; render(); window.scrollTo({ top: 0, behavior: "smooth" }); })
+        .catch(function (err) { EE.busy(next, false); EE.fail(err); });
+      return;
+    }
+    s.step++; render(); window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  prev.addEventListener("click", function () { s.step--; render(); });
+
+  EE.guard(["author"]).then(function (p) {
+    me = p;
+    document.getElementById("p-name").value = p.name;
+    var resume = EE.param("order");
+    if (resume) {
+      return EE.q(EE.sb.from("orders").select("*").eq("id", resume).single()).then(function (o) {
+        order = o; s.pkg = o.package; s.plan = o.plan;
+        document.getElementById("book").value = o.book_title;
+        document.getElementById("words").value = o.word_count;
+        s.step = o.status === "awaiting_payment" ? 3 : 4;
+        render();
+      });
+    }
+    // Pre-fill from the link (manuscript page) or the latest sample request.
+    if (EE.param("title")) { document.getElementById("book").value = EE.param("title"); document.getElementById("words").value = EE.param("words") || ""; render(); return; }
+    return EE.q(EE.sb.from("sample_requests").select("book_title, word_count, edit_type").eq("user_id", p.id).order("created_at", { ascending: false }).limit(1)).then(function (rows) {
+      if (rows[0]) {
+        document.getElementById("book").value = rows[0].book_title;
+        if (rows[0].word_count) document.getElementById("words").value = rows[0].word_count;
+        s.pkg = TYPE_TO_PKG[rows[0].edit_type] || "line";
+        document.getElementById("rec-line").innerHTML = "Based on your sample edit of <b style=\"color:var(--ink)\">" + EE.esc(rows[0].book_title) + "</b>, we recommend " + EE.esc(PKGS.filter(function (x) { return x.id === s.pkg; })[0].name) + ".";
+      }
+      render();
+    });
+  }).catch(EE.fail);
+});
+</script>
+</body>
+</html>

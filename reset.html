@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set a new password — Ethereal Editorial</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="auth-top">
+  <div class="container bar">
+    <a class="brand" href="index.html"><img src="logo-mark.png" alt=""><span>Ethereal Editorial</span></a>
+  </div>
+</header>
+<main class="signin-box">
+  <h1 class="display">Set a new password</h1>
+  <p class="muted" style="margin:6px 0 22px">Choose a strong password you don't use anywhere else.</p>
+  <div class="info-box warn" id="expired" hidden><span data-icon="info"></span><span>This reset link has expired or was already used. <a class="u-link" href="signin.html">Request a new one</a> from the sign-in page.</span></div>
+  <form id="reset" novalidate>
+    <div class="field"><label for="p1">New password</label><input class="input" id="p1" type="password" minlength="8" required autocomplete="new-password" placeholder="At least 8 characters"></div>
+    <div class="field"><label for="p2">Repeat new password</label><input class="input" id="p2" type="password" minlength="8" required autocomplete="new-password"></div>
+    <button class="btn btn-ink btn-block" id="go">Save new password</button>
+  </form>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (!EE.sb) return EE.setupNotice();
+  var form = document.getElementById("reset");
+  // The link signs the user in with a recovery session; without one the link is dead.
+  setTimeout(function () {
+    EE.session().then(function (s) { if (!s) { document.getElementById("expired").hidden = false; form.hidden = true; } });
+  }, 1200);
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!EE.validate(form)) return;
+    var p1 = document.getElementById("p1"), p2 = document.getElementById("p2");
+    if (p1.value !== p2.value) return EE.setError(p2, "Passwords don't match.");
+    var btn = document.getElementById("go"); EE.busy(btn, true);
+    EE.sb.auth.updateUser({ password: p1.value })
+      .then(function (r) { if (r.error) throw r.error; return EE.profile(true); })
+      .then(function (p) { EE.toast("Password updated.", "ok"); setTimeout(function () { location.replace(EE.homeFor(p)); }, 800); })
+      .catch(function (err) { EE.busy(btn, false); EE.fail(err); });
+  });
+});
+</script>
+</body>
+</html>

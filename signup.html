@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Create your account — Ethereal Editorial</title>
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="auth-top">
+  <div class="container bar">
+    <a class="brand" href="index.html"><img src="logo-mark.png" alt=""><span>Ethereal Editorial</span></a>
+    <span class="right">Already have an account? <a class="u-link" href="signin.html">Sign in</a></span>
+  </div>
+</header>
+
+<main class="auth-wrap">
+  <h1 class="display">Create your account</h1>
+  <p class="muted">Choose what you're here for. You can add the other later.</p>
+
+  <div class="choice-grid" role="tablist">
+    <button class="choice c-rust" data-path="beta" role="tab">
+      <span class="eyebrow">Beta reading</span>
+      <h3>Get feedback or read books</h3>
+      <p>Authors share manuscripts. Approved readers give feedback.</p>
+    </button>
+    <button class="choice c-teal" data-path="edit" role="tab">
+      <span class="eyebrow">Book editing</span>
+      <h3>Get my book edited</h3>
+      <p>Free sample edit, packages, and your edits in one place.</p>
+    </button>
+  </div>
+
+  <form class="form-card" id="signup" novalidate>
+    <div id="role-block">
+      <span class="label" style="font-size:14px;font-weight:600;color:var(--ink)">I am joining as</span>
+      <div class="role-grid">
+        <button type="button" class="role" data-role="author"><strong>An author</strong><span>Instant access. Upload your book and invite readers.</span></button>
+        <button type="button" class="role" data-role="reader"><strong>A beta reader</strong><span>Apply to join. Access starts once you're approved.</span></button>
+      </div>
+    </div>
+
+    <div class="info-box" id="info"><span data-icon="info"></span><span id="info-text"></span></div>
+
+    <div class="grid-3">
+      <div class="field"><label for="f-name">Full name</label><input class="input" id="f-name" name="name" placeholder="Jane Doe" required autocomplete="name"></div>
+      <div class="field"><label for="f-email">Email</label><input class="input" id="f-email" name="email" type="email" placeholder="you@email.com" required autocomplete="email"></div>
+      <div class="field"><label for="f-pass">Password</label><input class="input" id="f-pass" name="password" type="password" placeholder="At least 8 characters" minlength="8" required autocomplete="new-password"></div>
+    </div>
+
+    <!-- author -->
+    <div data-show="author" class="grid-3">
+      <div class="field"><label for="f-genre">My book's genre</label>
+        <select class="input" id="f-genre" name="genre"><option>Fantasy</option><option>Literary fiction</option><option>Romance</option><option>Thriller</option><option>Mystery</option><option>Sci-fi</option><option>Horror</option><option>Young adult</option><option>Memoir</option><option>Non-fiction</option><option>Other</option></select>
+      </div>
+    </div>
+
+    <!-- reader -->
+    <div data-show="reader">
+      <div class="grid-3">
+        <div class="field"><label for="r-country">Country</label><input class="input" id="r-country" name="country" placeholder="United Kingdom" required autocomplete="country-name"></div>
+        <div class="field"><label for="r-pace">Books per month</label>
+          <select class="input" id="r-pace" name="pace"><option>1 to 2</option><option selected>3 to 5</option><option>6 or more</option></select></div>
+        <div class="field"><label for="r-exp">Beta reading experience</label>
+          <select class="input" id="r-exp" name="experience"><option>None yet</option><option selected>A few books</option><option>Experienced</option></select></div>
+      </div>
+      <div class="field"><span class="label">Genres I love</span>
+        <div class="tag-row" id="genres">
+          <button type="button" class="chip">Fantasy</button><button type="button" class="chip">Literary</button><button type="button" class="chip">Romance</button><button type="button" class="chip">Thriller</button><button type="button" class="chip">Mystery</button><button type="button" class="chip">Sci-fi</button><button type="button" class="chip">Horror</button><button type="button" class="chip">Young adult</button><button type="button" class="chip">Non-fiction</button>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label for="r-link">Reading profile link <span class="muted" style="font-weight:400">(optional)</span></label><input class="input" id="r-link" name="link" type="url" placeholder="Goodreads, StoryGraph…"></div>
+        <div class="field"><label for="r-why">Why do you want to beta read?</label><input class="input" id="r-why" name="why" placeholder="One or two sentences" required></div>
+      </div>
+    </div>
+
+    <!-- editing -->
+    <div data-show="edit" class="grid-2">
+      <div class="field"><label for="e-title">Book title <span class="muted" style="font-weight:400">(optional)</span></label><input class="input" id="e-title" name="book_title" placeholder="Working title"></div>
+      <div class="field"><label for="e-words">Word count <span class="muted" style="font-weight:400">(optional)</span></label><input class="input" id="e-words" name="word_count" type="number" min="1" placeholder="85000"></div>
+    </div>
+
+    <button class="btn btn-rust btn-block" id="submit" type="submit">Create author account</button>
+    <p class="form-foot">By signing up you agree to our <a class="u-link" style="font-weight:400" href="legal.html?doc=terms">Terms</a> and <a class="u-link" style="font-weight:400" href="legal.html?doc=privacy">Privacy Policy</a>.</p>
+  </form>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var state = { path: EE.param("path") === "edit" ? "edit" : "beta", role: EE.param("role") === "reader" ? "reader" : "author" };
+  var form = document.getElementById("signup"), info = document.getElementById("info"), infoText = document.getElementById("info-text"), submit = document.getElementById("submit");
+
+  // Already signed in → straight to the account.
+  EE.profile().then(function (p) { if (p) location.replace(EE.homeFor(p)); }).catch(function () {});
+  if (!EE.sb) EE.setupNotice();
+
+  var COPY = {
+    author: { info: "Authors get instant access. You can manage your own manuscripts and readers, but you cannot open or comment on other authors' books.", cls: "", btn: "Create author account", btnCls: "btn-rust" },
+    reader: { info: "Every reader is reviewed by Ethereal Editorial. You can sign in right away, and manuscripts open once you're approved.", cls: "warn", btn: "Apply as a beta reader", btnCls: "btn-rust" },
+    edit: { info: "Start with a free 1,000-word sample edit. Your quotes, orders and edited files all live in one place.", cls: "", btn: "Create editing account", btnCls: "btn-teal" }
+  };
+
+  function render() {
+    EE.$$(".choice").forEach(function (c) { var on = c.dataset.path === state.path; c.classList.toggle("is-on", on); c.setAttribute("aria-selected", on); });
+    EE.$$(".role").forEach(function (r) { r.classList.toggle("is-on", r.dataset.role === state.role); });
+    document.getElementById("role-block").hidden = state.path !== "beta";
+    var mode = state.path === "edit" ? "edit" : state.role;
+    EE.$$("[data-show]").forEach(function (b) {
+      var on = b.dataset.show === mode;
+      b.hidden = !on;
+      EE.$$("input,select", b).forEach(function (i) { i.disabled = !on; });
+    });
+    var c = COPY[mode];
+    infoText.textContent = c.info;
+    info.className = "info-box " + c.cls;
+    submit.textContent = c.btn;
+    submit.className = "btn btn-block " + c.btnCls;
+  }
+
+  EE.$$(".choice").forEach(function (c) { c.addEventListener("click", function () { state.path = c.dataset.path; render(); }); });
+  EE.$$(".role").forEach(function (r) { r.addEventListener("click", function () { state.role = r.dataset.role; render(); }); });
+  EE.$$("#genres .chip").forEach(function (c) { c.addEventListener("click", function () { c.classList.toggle("is-on"); }); });
+  render();
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!EE.validate(form)) return;
+    if (!EE.sb) return EE.setupNotice();
+    var f = form.elements;
+    var mode = state.path === "edit" ? "edit" : state.role;
+    var genres = EE.$$("#genres .chip.is-on").map(function (c) { return c.textContent; });
+    if (mode === "reader" && !genres.length) { EE.toast("Pick at least one genre you love.", "err"); return; }
+
+    var email = f["email"].value.trim();
+    var meta = { name: f["name"].value.trim(), role: mode === "reader" ? "reader" : "author" };
+    if (mode === "reader") {
+      meta.country = f["country"].value.trim(); meta.pace = f["pace"].value; meta.experience = f["experience"].value;
+      meta.genres = genres; meta.link = f["link"].value.trim(); meta.why = f["why"].value.trim();
+    }
+    var next = mode === "reader" ? "profile.html" : mode === "edit" ? "edits.html" : "dashboard.html?welcome=1";
+    EE.busy(submit, true, "Creating your account…");
+    EE.sb.auth.signUp({
+      email: email,
+      password: f["password"].value,
+      options: { data: meta, emailRedirectTo: location.origin + "/signin.html?confirmed=1&next=" + encodeURIComponent(next) }
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      // Supabase returns a user with no identities when the email is already registered.
+      if (r.data.user && r.data.user.identities && r.data.user.identities.length === 0) throw new Error("User already registered");
+      if (r.data.session) { location.href = next; return; }
+      form.innerHTML = '<div class="success-box"><span class="tick">' + EE.ICONS.check.replace("<svg", '<svg width="26" height="26"') + '</span>' +
+        '<h3>Check your inbox</h3><p class="muted">We sent a confirmation link to <b style="color:var(--ink)">' + EE.esc(email) + '</b>. Click it to finish creating your account.</p>' +
+        '<p class="small muted" style="margin-top:14px">No email after a few minutes? Check spam, or <a class="u-link" href="signup.html">try again</a>.</p></div>';
+    }).catch(function (err) { EE.busy(submit, false); EE.fail(err); });
+  });
+});
+</script>
+</body>
+</html>

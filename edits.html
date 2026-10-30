@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My edits — Ethereal Editorial</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header id="app-top"></header>
+<div class="app">
+  <nav id="sidebar" aria-label="Dashboard"></nav>
+  <main class="app-main" style="max-width:960px">
+    <div class="page-head">
+      <h1>My edits</h1>
+      <div class="btn-row"><a class="btn btn-outline btn-sm" href="index.html#sample">Free sample edit</a><a class="btn btn-teal btn-sm" href="order.html">+ New editing order</a></div>
+    </div>
+    <h2 class="card-title" style="margin-top:6px">Editing orders</h2>
+    <div class="ms-list" id="orders"><p class="loading-line">Loading…</p></div>
+    <h2 class="card-title" style="margin-top:28px">Sample edits</h2>
+    <div class="ms-list" id="samples"></div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var PKG = { line: "Line + Copy Edit", copy: "Copy Edit", proof: "Proofread" };
+  var STATUS = {
+    awaiting_payment: ["Awaiting payment", "warn"], payment_sent: ["Payment sent · checking", ""],
+    confirmed: ["Confirmed · in progress", "ok"], delivered: ["Delivered", "ink"], cancelled: ["Cancelled", ""]
+  };
+  EE.guard(["author"]).then(function (me) {
+    EE.mountShell("edits", me);
+    return Promise.all([
+      EE.q(EE.sb.from("orders").select("*").eq("user_id", me.id).order("created_at", { ascending: false })),
+      EE.q(EE.sb.from("sample_requests").select("*").eq("user_id", me.id).order("created_at", { ascending: false }))
+    ]);
+  }).then(function (r) {
+    document.getElementById("orders").innerHTML = r[0].map(function (o) {
+      var st = STATUS[o.status] || [o.status, ""];
+      return '<article class="card appr"><div class="cover" style="width:38px;height:52px"></div><div class="body"><strong>' + EE.esc(o.book_title) + '</strong><span class="email">' + EE.esc(o.reference) + '</span>' +
+        '<div class="meta">' + PKG[o.package] + ' · ' + EE.num(o.word_count) + ' words · ' + EE.money(o.total) + ' total · ' + EE.money(o.due_now) + (o.plan === "full" ? " paid in full" : " deposit") + '</div>' +
+        '<em>Placed ' + EE.fmtDate(o.created_at) + (o.turnaround ? " · turnaround " + EE.esc(o.turnaround) : "") + '</em></div><div class="acts"><span class="status-pill ' + st[1] + '">' + st[0] + '</span>' +
+        (o.status === "awaiting_payment" ? '<a class="btn btn-teal btn-sm" href="order.html?order=' + o.id + '">Continue</a>' : '<a class="btn btn-outline btn-sm" href="chat.html">Chat</a>') + '</div></article>';
+    }).join("") || '<div class="card empty">No orders yet. <a class="link" href="order.html">Choose an edit</a> when you\'re ready.</div>';
+
+    document.getElementById("samples").innerHTML = r[1].map(function (sr) {
+      return '<article class="card appr"><span class="avatar av-md" style="background:var(--teal)">' + EE.initials(sr.book_title) + '</span><div class="body"><strong>' + EE.esc(sr.book_title) + '</strong>' +
+        '<div class="meta">' + EE.esc(sr.edit_type || "") + (sr.word_count ? " · " + EE.num(sr.word_count) + " words" : "") + ' · sent ' + EE.fmtDate(sr.created_at) + '</div>' +
+        '<em>' + (sr.status === "sent" ? "Your sample edit was emailed to " + EE.esc(sr.email) + "." : "We'll email your edited sample to " + EE.esc(sr.email) + " within 48 hours.") + '</em></div>' +
+        '<div class="acts"><span class="status-pill ' + (sr.status === "sent" ? "ok" : "warn") + '">' + (sr.status === "sent" ? "Sample sent" : "In progress") + '</span>' +
+        (sr.status === "sent" ? '<a class="btn btn-teal btn-sm" href="order.html">Order full edit</a>' : "") + '</div></article>';
+    }).join("") || '<div class="card empty">No sample edits yet. <a class="link" href="index.html#sample">Send your first 1,000 words</a>, it\'s free.</div>';
+  }).catch(EE.fail);
+});
+</script>
+</body>
+</html>

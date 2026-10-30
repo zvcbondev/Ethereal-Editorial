@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — Ethereal Editorial</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="admin">
+  <nav class="sidebar" aria-label="Admin">
+    <a class="brandtxt" href="index.html">Ethereal<br>Editorial<small>ADMIN</small></a>
+    <a class="side-link is-on" href="#approvals" data-tab="approvals"><span>Reader approvals</span><span class="badge" data-n="approvals" hidden></span></a>
+    <a class="side-link" href="#samples" data-tab="samples"><span>Sample edits</span><span class="badge" data-n="samples" hidden></span></a>
+    <a class="side-link" href="#orders" data-tab="orders"><span>Editing orders</span><span class="badge" data-n="orders" hidden></span></a>
+    <a class="side-link" href="#chat" data-tab="chat"><span>Chat</span></a>
+    <a class="side-link" href="dashboard.html"><span>My manuscripts</span></a>
+    <a class="side-link" href="#" id="signout"><span>Sign out</span></a>
+  </nav>
+
+  <main class="app-main" style="max-width:960px">
+    <section data-panel="approvals">
+      <div class="page-head" style="align-items:flex-start">
+        <div><h1>Reader approvals</h1><p class="small muted">Readers can't see any manuscript until you approve them.</p></div>
+        <div class="seg" id="r-filter"><button class="is-on" data-f="pending">Pending <span id="c-pending">0</span></button><button data-f="approved">Approved <span id="c-approved">0</span></button><button data-f="declined">Declined <span id="c-declined">0</span></button></div>
+      </div>
+      <div class="ms-list" id="apps"><p class="loading-line">Loading…</p></div>
+      <div class="card card-pad" style="margin-top:14px">
+        <h2 class="card-title">Access rules</h2>
+        <ul class="small" style="margin-left:18px;line-height:1.9">
+          <li><b>Authors:</b> instant access. They see and manage only their own manuscripts and comments.</li>
+          <li><b>Readers (pending):</b> can log in but see no manuscripts until approved.</li>
+          <li><b>Readers (approved):</b> can request books and comment only on books they've been accepted to read.</li>
+          <li><b>Authors cannot comment</b> on another author's manuscript, even if they also hold a reader account.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section data-panel="samples" hidden>
+      <div class="page-head"><div><h1>Sample edits</h1><p class="small muted">Free 1,000-word samples. Reply within 48 hours.</p></div></div>
+      <div class="ms-list" id="samples"></div>
+    </section>
+
+    <section data-panel="orders" hidden>
+      <div class="page-head"><div><h1>Editing orders</h1><p class="small muted">Send payment details in the customer's chat, then match the payment to the reference before confirming.</p></div></div>
+      <div class="ms-list" id="orders"></div>
+    </section>
+
+    <section data-panel="chat" hidden>
+      <div class="page-head"><div><h1>Chat</h1><p class="small muted">Private threads with authors and readers. Share payment details only here.</p></div></div>
+      <div class="card chat-admin" style="overflow:hidden">
+        <div class="threads" id="threads"></div>
+        <div class="chat">
+          <div class="chat-log" id="log"><p class="muted small center" style="margin:auto">Pick a conversation.</p></div>
+          <form class="chat-form" id="send" novalidate hidden>
+            <label for="msg" class="sr-only">Message</label>
+            <textarea class="input" id="msg" maxlength="5000" placeholder="Write a reply…"></textarea>
+            <button class="btn btn-ink" id="send-btn">Send</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var me, readers = [], samples = [], orders = [], filter = "pending";
+  function badge(name, n) { var b = document.querySelector('[data-n="' + name + '"]'); b.textContent = n; b.hidden = !n; }
+
+  // ---- tabs ----
+  function show(t) {
+    if (!document.querySelector('[data-panel="' + t + '"]')) t = "approvals";
+    EE.$$("[data-panel]").forEach(function (p) { p.hidden = p.dataset.panel !== t; });
+    EE.$$(".sidebar [data-tab]").forEach(function (a) { a.classList.toggle("is-on", a.dataset.tab === t); });
+    if (t === "chat") loadThreads();
+  }
+  EE.$$(".sidebar [data-tab]").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); show(a.dataset.tab); history.replaceState(null, "", "#" + a.dataset.tab); }); });
+  document.getElementById("signout").addEventListener("click", function (e) { e.preventDefault(); EE.signOut().then(function () { location.href = "index.html"; }); });
+
+  // ---- reader approvals ----
+  function loadReaders() {
+    return EE.q(EE.sb.from("profiles").select("*").eq("role", "reader").order("created_at", { ascending: false })).then(function (rows) { readers = rows; renderReaders(); });
+  }
+  function renderReaders() {
+    ["pending", "approved", "declined"].forEach(function (s) { document.getElementById("c-" + s).textContent = readers.filter(function (r) { return r.reader_status === s; }).length; });
+    badge("approvals", readers.filter(function (r) { return r.reader_status === "pending"; }).length);
+    var list = readers.filter(function (r) { return r.reader_status === filter; });
+    document.getElementById("apps").innerHTML = list.map(function (a) {
+      var acts = a.reader_status === "pending"
+        ? '<button class="btn btn-outline btn-sm" data-act="declined" data-id="' + a.id + '">Decline</button><button class="btn btn-teal btn-sm" data-act="approved" data-id="' + a.id + '">Approve</button>'
+        : '<span class="chip ' + (a.reader_status === "approved" ? "chip-mint" : "chip-soft") + '">' + (a.reader_status === "approved" ? "Approved" : "Declined") + '</span><button class="text-btn" data-act="pending" data-id="' + a.id + '">Undo</button>';
+      return '<article class="card appr"><span class="avatar av-md">' + EE.esc(EE.initials(a.name)) + '</span><div class="body"><strong>' + EE.esc(a.name) + '</strong><span class="email">' + EE.esc(a.email) + '</span>' +
+        '<div class="meta">' + EE.esc([a.country, a.pace && "Reads " + a.pace + " books/month", a.experience, (a.genres || []).length && "Likes " + a.genres.join(", ")].filter(Boolean).join(" · ")) + '</div>' +
+        (a.why ? '<em>"' + EE.esc(a.why) + '"</em>' : "") + (a.link ? ' <a class="link small" href="' + EE.esc(a.link) + '" target="_blank" rel="noopener nofollow">Reading profile</a>' : "") +
+        '<div class="tiny muted">Applied ' + EE.fmtDate(a.created_at) + '</div></div><div class="acts">' + acts + '</div></article>';
+    }).join("") || '<div class="card empty">Nothing here.</div>';
+  }
+  EE.$$("#r-filter button").forEach(function (b) { b.addEventListener("click", function () { filter = b.dataset.f; EE.$$("#r-filter button").forEach(function (x) { x.classList.toggle("is-on", x === b); }); renderReaders(); }); });
+  document.getElementById("apps").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-act]"); if (!b) return;
+    EE.busy(b, true, "…");
+    EE.q(EE.sb.from("profiles").update({ reader_status: b.dataset.act }).eq("id", b.dataset.id))
+      .then(function () { var r = readers.filter(function (x) { return x.id === b.dataset.id; })[0]; r.reader_status = b.dataset.act; renderReaders(); if (b.dataset.act !== "pending") EE.toast(r.email + (b.dataset.act === "approved" ? " approved. They can now request books." : " declined."), b.dataset.act === "approved" ? "ok" : ""); })
+      .catch(function (err) { EE.busy(b, false); EE.fail(err); });
+  });
+
+  // ---- samples ----
+  function loadSamples() {
+    return EE.q(EE.sb.from("sample_requests").select("*").order("created_at", { ascending: false }).limit(300)).then(function (rows) { samples = rows; renderSamples(); });
+  }
+  function renderSamples() {
+    badge("samples", samples.filter(function (s) { return s.status === "new"; }).length);
+    document.getElementById("samples").innerHTML = samples.map(function (s) {
+      var reply = "mailto:" + encodeURIComponent(s.email) + "?subject=" + encodeURIComponent("Your free sample edit: " + s.book_title);
+      return '<article class="card appr"><span class="avatar av-md" style="background:var(--teal)">' + EE.esc(EE.initials(s.name)) + '</span><div class="body"><strong>' + EE.esc(s.book_title) + '</strong><span class="email">' + EE.esc(s.name) + ' · ' + EE.esc(s.email) + '</span>' +
+        '<div class="meta">' + EE.esc([s.genre, s.word_count && EE.num(s.word_count) + " words", s.edit_type].filter(Boolean).join(" · ")) + '</div>' +
+        (s.notes ? '<em>"' + EE.esc(s.notes) + '"</em>' : "") + '<div class="tiny muted">Received ' + EE.fmtDate(s.created_at, true) + '</div></div><div class="acts">' +
+        (s.file_path ? '<button class="btn btn-outline btn-sm" data-file="' + EE.esc(s.file_path) + '">Download file</button>' : "") +
+        '<a class="btn btn-outline btn-sm" href="' + reply + '">Reply by email</a>' +
+        (s.status === "new" ? '<button class="btn btn-teal btn-sm" data-sent="' + s.id + '">Mark as sent</button>' : '<span class="chip chip-mint">Sample sent</span>') + '</div></article>';
+    }).join("") || '<div class="card empty">No sample requests yet.</div>';
+  }
+  document.getElementById("samples").addEventListener("click", function (e) {
+    var f = e.target.closest("[data-file]"), s = e.target.closest("[data-sent]");
+    if (f) {
+      EE.q(EE.sb.storage.from("samples").createSignedUrl(f.dataset.file, 300, { download: true }))
+        .then(function (r) { location.href = r.signedUrl; }).catch(EE.fail);
+    }
+    if (s) {
+      EE.busy(s, true, "…");
+      EE.q(EE.sb.from("sample_requests").update({ status: "sent" }).eq("id", s.dataset.sent))
+        .then(function () { samples.forEach(function (x) { if (x.id === s.dataset.sent) x.status = "sent"; }); renderSamples(); EE.toast("Marked as sent.", "ok"); })
+        .catch(function (err) { EE.busy(s, false); EE.fail(err); });
+    }
+  });
+
+  // ---- orders ----
+  var PKG = { line: "Line + Copy Edit", copy: "Copy Edit", proof: "Proofread" };
+  var NEXT = { payment_sent: ["confirmed", "Confirm payment"], awaiting_payment: ["confirmed", "Mark as paid"], confirmed: ["delivered", "Mark delivered"] };
+  var LABEL = { awaiting_payment: ["Awaiting payment", "warn"], payment_sent: ["Payment sent", "warn"], confirmed: ["Confirmed", "ok"], delivered: ["Delivered", "ink"], cancelled: ["Cancelled", ""] };
+  function loadOrders() {
+    return EE.q(EE.sb.from("orders").select("*, customer:profiles(id, name, email)").order("created_at", { ascending: false }).limit(300)).then(function (rows) { orders = rows; renderOrders(); });
+  }
+  function renderOrders() {
+    badge("orders", orders.filter(function (o) { return o.status === "payment_sent" || o.status === "awaiting_payment"; }).length);
+    document.getElementById("orders").innerHTML = orders.map(function (o) {
+      var c = o.customer || {}, st = LABEL[o.status] || [o.status, ""], nx = NEXT[o.status];
+      return '<article class="card appr"><div class="cover" style="width:38px;height:52px"></div><div class="body"><strong>' + EE.esc(o.book_title) + '</strong><span class="email">' + EE.esc(o.reference) + ' · ' + EE.esc(c.name || "") + ' · ' + EE.esc(c.email || "") + '</span>' +
+        '<div class="meta">' + PKG[o.package] + ' · ' + EE.num(o.word_count) + ' words · ' + EE.money(o.total) + ' total · ' + (o.plan === "full" ? "paid in full" : "50% deposit") + ' · ' + EE.esc(o.turnaround || "") + '</div>' +
+        '<em>Expecting ' + EE.money(o.due_now) + ' by ' + EE.esc(o.method || "—") + (o.payer_name ? " from " + EE.esc(o.payer_name) + (o.sent_on ? " (sent " + EE.fmtDate(o.sent_on) + ")" : "") : "") + '</em></div>' +
+        '<div class="acts"><span class="status-pill ' + st[1] + '">' + st[0] + '</span><button class="btn btn-outline btn-sm" data-chat="' + c.id + '">Chat</button>' +
+        (nx ? '<button class="btn btn-teal btn-sm" data-o="' + o.id + '" data-to="' + nx[0] + '">' + nx[1] + '</button>' : "") +
+        (o.status === "awaiting_payment" || o.status === "payment_sent" ? '<button class="text-btn" data-o="' + o.id + '" data-to="cancelled">Cancel</button>' : "") + '</div></article>';
+    }).join("") || '<div class="card empty">No orders yet.</div>';
+  }
+  document.getElementById("orders").addEventListener("click", function (e) {
+    var c = e.target.closest("[data-chat]");
+    if (c) { show("chat"); history.replaceState(null, "", "#chat"); return openThread(c.dataset.chat); }
+    var b = e.target.closest("[data-o]"); if (!b) return;
+    var go = b.dataset.to === "cancelled" ? EE.confirm("Cancel this order?", "The customer will see it as cancelled.", "Cancel order", true) : Promise.resolve(true);
+    go.then(function (ok) {
+      if (!ok) return;
+      EE.busy(b, true, "…");
+      return EE.q(EE.sb.from("orders").update({ status: b.dataset.to }).eq("id", b.dataset.o)).then(function () {
+        orders.forEach(function (o) { if (o.id === b.dataset.o) o.status = b.dataset.to; });
+        renderOrders(); EE.toast("Order updated.", "ok");
+      });
+    }).catch(function (err) { EE.busy(b, false); EE.fail(err); });
+  });
+
+  // ---- chat ----
+  var current = null, names = {}, seen = {}, log = document.getElementById("log");
+  function loadThreads() {
+    return EE.q(EE.sb.from("messages").select("thread_id, sender_id, body, created_at").order("created_at", { ascending: false }).limit(1000)).then(function (rows) {
+      var latest = {};
+      rows.forEach(function (m) { if (!latest[m.thread_id]) latest[m.thread_id] = m; });
+      var ids = Object.keys(latest);
+      var need = ids.filter(function (id) { return !names[id]; });
+      return (need.length ? EE.q(EE.sb.from("profiles").select("id, name, email, role").in("id", need)) : Promise.resolve([])).then(function (ps) {
+        ps.forEach(function (p) { names[p.id] = p; });
+        document.getElementById("threads").innerHTML = ids.map(function (id) {
+          var m = latest[id], p = names[id] || {}, waiting = m.sender_id === id;
+          return '<button class="thread' + (id === current ? " is-on" : "") + '" data-thread="' + id + '"><span class="avatar av-sm">' + EE.esc(EE.initials(p.name)) + '</span><span class="t"><strong>' + EE.esc(p.name || "User") + (waiting ? ' <span class="badge" style="vertical-align:1px">new</span>' : "") + '</strong><span>' + EE.esc(m.body) + "</span></span></button>";
+        }).join("") || '<p class="muted small" style="padding:16px">No conversations yet.</p>';
+      });
+    }).catch(EE.fail);
+  }
+  function bubble(m) {
+    if (seen[m.id]) return; seen[m.id] = 1;
+    var d = document.createElement("div");
+    d.className = "bubble " + (m.sender_id === m.thread_id ? "them" : "me");
+    d.innerHTML = EE.esc(m.body) + "<small>" + (m.sender_id === m.thread_id ? EE.esc((names[m.thread_id] || {}).name || "Customer") : "You") + " · " + EE.fmtDate(m.created_at, true) + "</small>";
+    log.appendChild(d); log.scrollTop = log.scrollHeight;
+  }
+  function openThread(id) {
+    current = id; seen = {}; log.innerHTML = "";
+    document.getElementById("send").hidden = false;
+    EE.$$(".thread").forEach(function (t) { t.classList.toggle("is-on", t.dataset.thread === id); });
+    var nameP = names[id] ? Promise.resolve() : EE.q(EE.sb.from("profiles").select("id, name, email, role").eq("id", id).single()).then(function (p) { names[id] = p; });
+    return nameP.then(function () { return EE.q(EE.sb.from("messages").select("*").eq("thread_id", id).order("created_at")); })
+      .then(function (rows) { if (!rows.length) log.innerHTML = '<p class="muted small center" style="margin:auto">Start the conversation with ' + EE.esc((names[id] || {}).name || "this customer") + ".</p>"; rows.forEach(bubble); })
+      .catch(EE.fail);
+  }
+  document.getElementById("threads").addEventListener("click", function (e) { var t = e.target.closest("[data-thread]"); if (t) openThread(t.dataset.thread); });
+  var input = document.getElementById("msg"), form = document.getElementById("send");
+  input.addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event("submit")); } });
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var text = input.value.trim(); if (!text || !current) return;
+    var btn = document.getElementById("send-btn"); EE.busy(btn, true, "…");
+    EE.q(EE.sb.from("messages").insert({ thread_id: current, body: text }).select("*").single())
+      .then(function (m) { var empty = EE.$("p", log); if (empty && !EE.$(".bubble", log)) empty.remove(); bubble(m); input.value = ""; EE.busy(btn, false); loadThreads(); })
+      .catch(function (err) { EE.busy(btn, false); EE.fail(err); });
+  });
+
+  EE.guard(["admin"]).then(function (p) {
+    me = p;
+    show(location.hash.slice(1) || "approvals");
+    return Promise.all([loadReaders(), loadSamples(), loadOrders()]);
+  }).then(function () {
+    EE.sb.channel("admin-messages")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, function (payload) {
+        if (payload.new.thread_id === current) bubble(payload.new);
+        if (!EE.$('[data-panel="chat"]').hidden) loadThreads();
+      }).subscribe();
+  }).catch(EE.fail);
+});
+</script>
+</body>
+</html>
